@@ -1,0 +1,945 @@
+ons-list-item > ons-icon {
+  margin: 0 4px 0 0;
+  opacity: 0.8;
+
+}
+.list__item{
+    color: #ffffff;
+    background-color: #242424;
+    
+}
+ons-list{
+    background-color: #242424;
+    color: #ffffff; 
+}
+.list-item-action {
+  position: absolute;
+  right: 10px;
+  top: 0px;
+  font-size: 20px;
+  opacity: 0.3;
+  color: #ffffff; /* Sets the color to white */    
+
+}
+
+.list__item--tappable:active{
+      background-color: white;
+}
+
+.list-item-action > ons-icon {
+  margin-top: 14px;
+}
+
+.switch
+
+.ons-icon{
+  font-size: 32px;
+  width: 1em;  
+  color: #ffffff; /* Sets the color to white */
+}
+
+.page__background{
+background-color: #2e2e2e;
+}
+.page{
+color:#ffffff;    
+}
+.navigation-bar{
+background-color: #1a1a1a;
+ 
+}
+.tab-bar{
+background-color: #1a1a1a;
+}
+
+.paramslabel{
+	font-weight:bold;
+	text-align:center;
+	padding-top: 3px;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.paramsvalue{
+	font-size:2em;
+	font-weight:bold;
+	text-align:center;
+	color: #4da6ff;
+	padding-top: 3px;
+}
+
+.lastupdatedlabel{
+	float: left;
+	width:40%;
+	padding-right: 20px;
+	text-align:right;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.flagslabel{
+	font-weight:bold;
+	text-align:right;
+	padding-top: 5px;
+	padding-right: 10px;
+	width:50%;
+	float: left;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.iolabel{
+	font-weight:bold;
+	text-align:right;
+	padding-top: 8px;
+	padding-right: 10px;
+	width:50%;
+	float: left;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.iovalue{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 5px;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.dimminglabel{
+	font-size:.9em;
+	font-weight:bold;
+	text-align:right;
+	padding-top: 10px;
+	padding-right: 10px;
+	width:39%;
+	float: left;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.dimmingvalue{
+	font-weight:bold;
+	text-align:center;
+	padding-top: 10px;
+	width:11%;
+	float: left;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.dimmingoverridevalue{
+	font-weight:bold;
+	text-align:center;
+	padding-top: 1px;
+	width:11%;
+	float: left;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.dimmingslider{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 5px;
+}
+
+.cvarlabel{
+	font-weight:bold;
+	text-align:right;
+	padding-right: 10px;
+	width:50%;
+	float: left;
+	padding-top: 10px;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.cvarvalue{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 10px;
+}
+
+.rflabel{
+	font-weight:bold;
+	text-align:center;
+	width:100%;
+	padding-top: 10px;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.cvarvalue{
+	font-weight:bold;
+	text-align:left;
+	padding-top: 10px;
+    color: #ffffff; /* Sets the color to white */
+}
+
+.paramsbox{
+	padding-top: 10px;
+	padding-bottom: 10px;
+	float: left;
+	width:33%;
+}
+
+.button-bar__button, .button-bar__button:active,
+:active + .button-bar__button {
+	height: 36px;
+	line-height: 36px;
+	font-size: 14px;
+	background-color: #242424;
+    color: #ffffff; /* Sets the color to white */
+}
+
+#alert {
+	background-color: indianred;
+	color: white;
+}
+
+.normalbutton{
+    width:40%;
+    padding-top:10px;    
+}
+
+.range {
+	width:170px;
+}
+
+.daylightslider::-webkit-slider-thumb {
+	background-color: #fd9;
+}
+
+.daylightslider::-webkit-slider-thumb:before {
+	background-color: rgba(255,103,0,0.81);	
+}
+
+.actinicslider::-webkit-slider-thumb {
+	background-color: #bdf;
+}
+
+.actinicslider::-webkit-slider-thumb:before {
+	background-color: rgba(24,103,194,0.81);
+}
+
+.redslider::-webkit-slider-thumb {
+	background-color: #fcc;
+}
+
+.redslider::-webkit-slider-thumb:before {
+	background-color: rgba(255,50,50,0.81);	
+}
+
+.blueslider::-webkit-slider-thumb {
+	background-color: #eff;
+}
+
+.blueslider::-webkit-slider-thumb:before {
+	background-color: rgba(150,200,255,0.81);	
+}
+
+.intensityslider::-webkit-slider-thumb {
+	background-color: #fdf;
+}
+
+.intensityslider::-webkit-slider-thumb:before {
+	background-color: rgba(150,100,255,0.81);	
+}
+
+.range:disabled {
+	opacity: 1;
+	cursor: default;
+	pointer-events: none;
+}
+
+.pwmeslider::-webkit-slider-thumb {
+	background-color: #bf9;
+}
+
+.pwmeslider::-webkit-slider-thumb:before {
+	background-color: rgba(90,170,40,0.81);	
+}
+
+.rfmodeconstant{
+	color:#00682e;
+}
+
+.dimmingoverridehighlight {
+    color: white;
+    text-shadow: 1px 1px 2px black, 0 0 25px blue, 0 0 5px darkblue;
+}
+
+.controllerlist{
+	width: 85%;
+	padding: 10px;
+}
+
+.controllerlistitem{
+	color:#990000;
+	font-weight:bold;
+    background-color:#2e2e2e;
+}
+
+.controllerlistheader{
+	padding-left: 15px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	background-color:#2a2a2a;
+	font-weight:bold;
+}
+
+.controllerlistaction{
+	padding-left: 25px;
+    font-size: 22px;
+}
+
+.relaylabel
+{
+	font-weight:bold;
+	text-align:right;
+	padding-right: 10px;
+	width:35%;
+	float: left;
+	padding-top: 20px;
+    color: #ffffff;
+}
+
+.relaybuttons
+{
+    width: 200px;
+}
+.relayblankclass
+{
+	background-color:#4a4a4a !important;
+	color: rgba(100, 149, 237, 1) !important;
+}
+
+.relaygreenclass
+{
+	background-color:#009933 !important;
+	color: #fff !important;
+}
+
+.relayredclass
+{
+	background-color: #F00 !important;
+	color: #fff !important;
+}
+
+.graphlist{
+	width: 30%;
+	padding: 10px;
+	text-align:left;
+ 
+}
+
+.nobottomline{
+	border-bottom:0px;
+}
+
+.memorylist{
+	width: 90%;
+	text-align:left;
+}
+
+.timetext{
+	font-size:1em;
+}
+
+.item-accordion {
+  line-height: 37px;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: 0.07s all linear;
+  color: #ffffff;
+  background-color: #2e2e2e;
+}
+
+.item-accordion.ng-hide {
+  line-height: 0px;
+}
+
+.item-accordion.ng-hide-add,
+.item-accordion.ng-hide-remove {
+  display: block !important;
+ background-color: #242424;
+}
+
+.accordiontitle {
+  background: #242424;
+  color: #ffffff;
+}
+
+.accordionactive {
+  background: #565656;
+}
+
+.whitespace
+{
+	white-space: pre;
+}
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+
+.chartheight
+{
+	height:110%;
+	margin-top: -200px;
+}
+.addcontrollerheader
+{
+	font-weight:bold;
+	font-size:1.2em;
+    color: #ffffff;
+}
+.addcontrollerdescription
+{
+	font-size: .9em;
+    color: #ffffff;
+}
+
+.relayheader
+{
+	font-size:1.2em;
+	font-weight:bold;
+	color:#990000;
+	margin-top: 15px;
+	margin-bottom: 5px;
+	text-align:center;
+}
+
+/* newStuff */
+
+.labelslist{
+	width: 100%;
+} 
+
+
+.form-banner {
+    font-size: 18px; /* Smaller font size for smaller screens */
+    border-top-left-radius: 10px; /* Match the form's border-radius */
+    border-top-right-radius: 10px; /* Match the form's border-radius */
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    background-color: #242424; /* Change the color as needed */
+    text-align: center;
+    padding: .1px 0;
+    color:white;
+    border-bottom: 1px solid #eee;
+    margin:0;  
+}
+
+
+
+
+table{
+  width: 100%;
+  border-collapse: collapse;
+
+}
+
+th, td{
+  text-align: center;
+  padding: 5px;
+  border: 1px solid white;
+}
+
+thead{
+  background-color: #eee;
+  font-weight: bold;
+}
+
+th{
+  background-color:#242424;
+  color: white;
+}
+
+.alertform{
+    width: 90%;
+    margin: auto;
+    border-radius:10px; 
+    overflow: hidden; 
+    box-sizing: border-box;
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.2); /* Bigger and more prominent shadow */
+}
+
+
+.emaillistitem {
+    text-align: center;
+    font-weight: bold;
+   display:inline-block;
+    align-items: center;
+    padding: 10px;
+     background-color: transparent;
+}
+
+.alertlist {
+  width: 95%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a box-shadow */
+  border: 1px solid #ccc;
+  border-radius: 10px; /* Adjust the value to control the degree of rounding */
+  overflow: hidden; /* Ensure that the rounded corners are visible */
+}
+
+.description-input{
+    background-color: #242424;
+    color:white;
+    border: 1px solid #ddd;
+}
+.text-input{
+    background-color: #242424;
+    color:white;
+    border: 1px solid #ddd;
+}
+.tab-content {
+  margin-top: 20px;
+}
+
+.tab-button {
+  width: 25%; /* Adjust based on the number of tabs */
+  background-color: #1867c2; /* Adjust the color to your preference */
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px; /* Rounded corners for buttons */
+}
+
+.tab-button:hover {
+  background-color: #0a4a82; /* Darker shade for hover effect */
+}
+
+.settings-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Center items as a group */
+  margin: 20px auto; /* Center container horizontally */
+  padding: 0 5px; /* Padding around the entire container */
+  max-width: 600px; /* Adjust based on your layout needs */
+}
+
+.settings-item {
+  flex-basis: 50%; /* Adjust this value if you need more or fewer items per row */
+  padding: 5px; /* Padding for spacing between items */
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start; /* Aligns items' content to the left */
+  align-items: center; /* Centers items vertically within each `.settings-item` */
+}
+
+.settings-item label {
+ 
+  width: 100%; /* Ensures the label takes up the full width of its container */
+  display: flex;
+  justify-content: flex-start; /* Aligns the label text to the left */
+  align-items: center; /* Centers the checkbox and label text vertically */
+}
+
+input[type="checkbox"] {
+  margin-right: 5px; /* Spacing between checkbox and label text */
+}
+
+
+/* Dark theme styles */
+.fc {
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Light text color */
+}
+
+/* Dark theme button styles */
+.fc .fc-button-primary {
+    background-color: #007bff; /* Blue color for primary buttons */
+    color: #fff; /* Light text color */
+    border: none;
+    border-radius: 20px; /* Rounded corners */
+    padding: 0.375rem 0.75rem; /* Padding */
+    font-size: 1rem; /* Text size */
+    transition: background-color 0.2s; /* Smooth transition for hover effect */
+}
+
+.fc .fc-button-primary:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.fc .fc-button-primary:not(:disabled):active, 
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: #004085; /* Even darker blue for active state */
+}
+
+/* Dark theme event styles */
+.fc-event {
+    background-color: #6c757d; /* Dark gray for events */
+    color: #fff; /* Light text color */
+}
+
+/* Dark theme date styles */
+.fc-day-header {
+    background-color: #343a40; /* Dark gray for day headers */
+    color: #fff; /* Light text color */
+}
+
+/* Dark theme today button styles */
+.fc-today-button {
+    background-color: #007bff; /* Blue color for today button */
+    color: #fff; /* Light text color */
+}
+
+.fc-today-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+/* Style the header toolbar of the calendar */
+.fc-list-heading thead th {
+    color: black; /* Light text color */
+}
+.calendardiv {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 10px;
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Light text color */
+    max-width: 90%;
+    margin: auto; /* Centering the calendar div */
+    justify-content: center; /* Horizontal centering */
+    align-items: center; /* Vertical centering if needed */
+}
+.calendardiv {
+    margin-top: 20px;
+}
+/* Style the header toolbar of the calendar */
+.fc-toolbar.fc-header-toolbar {
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Light text color */
+}
+.user-variables-display {
+  display: flex; /* Use flexbox layout */
+  flex-wrap: wrap; /* Allow items to wrap to the next row */
+  justify-content: center; /* Center items horizontally */
+}
+
+.user-variable-item {
+  width: calc(50% - 20px); /* Adjust width to fit two items per row with margin */
+  margin: 10px; /* Adjust margin between items */
+  display: flex; /* Use flexbox layout for individual items */
+  justify-content: center; /* Center items horizontally within each item */
+  align-items: center; /* Center items vertically within each item */
+  text-align: center; /* Center text horizontally within each item */
+}
+/* For dark theme */
+.uvarlabel {
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1em;
+    color: #fff; /* Adjust color as needed */
+}
+
+ .uvarvalue {
+    font-weight: bold;
+    cursor: pointer;
+   font-size: 1em;
+    color: #ccc; /* Adjust color as needed */
+}
+
+  #uvDialog .dialog {
+        background-color: #333; /* Dark background */
+        color: #fff; /* Light text */
+    }
+
+    #uvDialog .text-input {
+        border: 1px solid #555; /* Darker border for input */
+        background-color: #222; /* Dark input field */
+        color: #ddd; /* Light text for input */
+    }
+
+    #uvDialog .button {
+        background-color: #555; /* Dark button */
+        border: none;
+        color: #fff; /* Light text for buttons */
+    }
+
+    #uvDialog .button--cta {
+        background-color: #0066cc; /* Bright color for call to action */
+        color: #fff;
+    }
+
+    #uvDialog label {
+        color: #ccc; /* Lighter text for labels */
+    }
+
+    .rflabel {
+        color: #fff; /* Ensuring label text is also light */
+    }
+    #eventDetailsDialog .dialog {
+        background-color: #333; /* Dark background */
+        color: #fff; /* Light text */
+    }
+
+
+    /* Custom class for the text to ensure visibility in dark theme */
+    #eventDetailsDialog .dialog-text {
+        color: #ccc; /* Lighter text for better readability */
+    }
+
+      #eventDialog .dialog{
+        background-color: #333; /* Dark background */
+        color: #fff; /* Light text */
+    }
+
+    #eventDialog .text-input, #eventDialog .textarea {
+        border: 1px solid #555; /* Darker border for input */
+        background-color: #222; /* Dark input field */
+        color: #ddd; /* Light text for input */
+    }
+
+    #eventDialog ons-button {
+        background-color: #555; /* Dark button */
+        border: none;
+        color: #fff; /* Light text for buttons */
+    }
+
+    #eventDialog ons-button[modifier="quiet"] {
+        background-color: #0066cc; /* Bright color for call to action */
+        color: #fff;
+    }
+
+    #eventDialog label {
+        color: #ccc; /* Lighter text for labels */
+    }
+
+.fc-list-day-text,
+.fc-list-day-side-text {
+    color: #000; /* Black text color */
+} 
+
+.dialog-content {
+  text-align: center;
+}
+
+.event-title {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 8px;
+}
+
+.event-time,
+.event-description {
+  margin-bottom: 16px;
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+}
+
+.cancel-button,
+.delete-button {
+  margin: 0 8px;
+}
+@media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
+h4{
+	font-size:.8em;        
+}
+p{
+	font-size:.7em;        
+}
+.paramsvalue{
+	font-size:1em;
+}
+
+.paramsvalue{
+	font-size:1.4em;
+}
+
+.paramslabel{
+	font-size:0.7em;
+}
+    
+.lastupdatedlabel{
+	width:35%;
+	font-size:0.6em;
+}
+    
+.lastupdatedvalue{
+	font-size:0.6em;
+}
+    
+ons-list-item {
+  font-size: .7em;
+}
+.refreshbutton{
+  font-size: .7em;        
+}
+.toolbar-button {
+  font-size: 1em;
+}
+.ons-icon{
+  font-size: 20px;
+  width: 1em;    
+}
+.button-bar__button, .button-bar__button:active,
+:active + .button-bar__button {
+	height: 30px;
+	line-height: 30px;
+	font-size: .6em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+}
+.button--large--cta{
+	font-size: .7em;
+}
+.button--cta{
+    width:40%;
+    padding-top:0px;    
+	font-size: .7em;
+}
+.normalbutton{
+    width:40%;
+    padding-top:0px;    
+	font-size: .7em;
+}
+.controllerlistitem{
+    font-size: .7em;
+}
+.back-button__label{
+    font-size: .7em;
+}
+.navigation-bar__title{
+    font-size: .7em;
+}
+.ons-back-button__icon{
+  font-size: 20px !important;
+  width: 1em !important;
+}
+.controllerlistaction{
+	padding-left: 25px;
+    font-size: .8em;
+}
+.rflabel{
+	font-weight:bold;
+	text-align:center;
+	width:100%;
+	padding-top: 10px;
+    font-size: .7em;
+}
+.list__header{
+    font-size: .7em;        
+}
+.flagslabel{
+    font-size: .7em;
+}
+
+.iolabel{
+    font-size: .7em;
+}
+
+.iovalue{
+    font-size: .7em;
+}
+
+.dimminglabel{
+    font-size: .7em;
+}
+
+.dimmingvalue{
+    font-size: .7em;
+}
+.range {
+	width:40%;
+}
+.cvarlabel{
+   font-size: .7em;
+}
+
+.cvarvalue{
+   font-size: .7em;
+}
+.checkbox{
+   font-size: .7em;        
+}
+.graphlist{
+	width: 80%;
+	padding: 10px;
+	text-align:left;
+}
+.relaylabel
+{
+   font-size: .7em;
+	width:35%;
+}
+    
+.relaybuttons
+{
+    width: 55%;
+}
+
+.addcontrollerheader
+{
+	font-weight:bold;
+	font-size:.8em;
+}
+
+.addcontrollerdescription
+{
+	font-size: .6em;
+}
+
+.relayheader
+{
+	font-size: .8em;
+	font-weight:bold;
+	color:#990000;
+	margin-top: 15px;
+	margin-bottom: 5px;
+	text-align:center;
+}
+    
+.labelslist{
+	width: 100%;
+}    
+.labelslist p{
+        font-size: 12px;
+    }
+
+.form-banner p{
+        font-size: 14px; /* Adjust paragraph font size in the banner */
+        text-align: center;
+        padding-left: 10px;
+        padding-right: 10px;
+}
+    .alertform label {
+        font-size: 14px; /* Adjust paragraph font size in the banner */
+        text-align: center;
+}
+.alertform p{
+         font-size: 12px; /* Adjust paragraph font size in the banner */
+        text-align: center;
+    }
+    
+table tr {
+    margin-bottom: 10px; /* Add spacing between stacked rows */
+}
+    
+table th, table td {
+    font-size: 12px; /* Adjust as needed */
+}    
+.centered-content p {
+  font-size: 0.7em; /* Adjust the size of the paragraph text */
+}
+
+.centered-content i {
+  font-size: 0.7em; /* Adjust the size of the italicized note */
+}
+    
+    
+            .fc .fc-button-primary {
+        padding: 0.25rem 0.5rem; /* Smaller padding */
+        font-size: 0.8rem; /* Smaller font size */
+        border-radius: 0.2rem; /* Slightly less rounded corners */
+    }
+
+    /* Adjust calendar title size */
+    .fc .fc-toolbar-title {
+        font-size: 1.25rem; /* Smaller title font size */
+    }
+ .uvarlabel {
+        font-size: .8em; /* Adjust font size for smaller screens */
+    }
+
+    .uvarvalue {
+        font-size: .8em; /* Adjust font size for smaller screens */
+    }
+}
+
