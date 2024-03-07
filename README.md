@@ -7,3 +7,5 @@ Copied from the Orignal U-app version 2 from Reef Angel  created by Roberto.
 Uapp version 3 now includes Dynamic login for cloud and Wifi Users, Uservariables, Dark Mode, ability to edit dashboard, email alerts, and label settings. 
 
 THis is a progressive web app that can be installed on most devices.
+
+HTML5 based application designed to interact with your Reef Angel Controller. It's a universal app that can be compiled and deployed in several platforms.
