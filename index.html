@@ -1,30 +1,42 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+    
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.5">
+    <meta name="description" content="Reef Angel Controller Uapp">
+  <!--   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">  -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="HandheldFriendly" content="true" />
+    <meta name="theme-color" id="theme-color-meta" content="#e9eef0">
     <link rel="apple-touch-icon" href="images/icon.png" />
     <link rel="apple-touch-startup-image" href="" />
     <link rel="manifest" href="manifest.json">
+    <!--Style Sheets-->
     <link rel="stylesheet" href="fullCalender/main.css" />
     <link rel="stylesheet" href="css/onsenui.css">
     <link rel="stylesheet" href="css/onsen-css-components.css">
     <link rel="stylesheet" href="css/uapp.css">
-    <script src="js/angular/angular.js"></script>
-    <script src="js/onsenui.js"></script>
+
+    <script src="js/angular/angular.min.js"></script>
+    <script src="js/onsenui.min.js"></script>
     <script src="js/xml2json.min.js"></script>
     <script src="js/ngStorage.min.js"></script>
     <script src="js/jquery-1.9.1.min.js"></script>
     <!-- FullCalendar JS -->
-    <script src="fullCalender/main.js"></script>
+    <script src="fullCalender/main.min.js"></script>
+    <!-- HighCharts -->
     <script src="js/highcharts.js"></script>
     <script src="js/highstock.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="js/angular-animate.min.js"></script>
     <script src="js/mqttws31-min.js" type="text/javascript"></script>
     <script src="js/uapp.js"></script>
+
+    <title>Reef Angel Controller User App</title>
+   
   </head>
 <body ng-app="uapp" >          
 <ons-modal var="modal">
@@ -49,8 +61,8 @@
   <ons-list>
     <ons-list-item>
         Reef Angel Uapp
-        <a href="Uapp3.0.2Manual.pdf" style="text-decoration: none; color: Red;">
-          3.0.2
+        <a href="Uapp3.0.3Manual.pdf" style="text-decoration: none; color: Red;">
+          3.0.3
         </a>
       </ons-list-item>
     <ons-list-item modifier="tapable" onclick="menu.toggleMenu()">Close<span class="list-item-action">
@@ -73,14 +85,18 @@
     <ons-list-item modifier="chevron" ng-click="syncdate();" onclick="menu.toggleMenu()">Sync RA Time with System</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getcontrollerdata('d');" onclick="menu.toggleMenu()">Get RA Time</ons-list-item>
     <ons-list-item modifier="chevron" ng-click="getcontrollerdata('v');" onclick="menu.toggleMenu()">Get RA Version</ons-list-item>
-    <ons-list-item modifier="chevron" ng-click="getcontrollerdata('boot');" onclick="menu.toggleMenu()">Reboot Controller</ons-list-item>
-<ons-list-item>
+    <ons-list-item modifier="chevron" ng-click="showConfirmDialog()" onclick="menu.toggleMenu()">Reboot Controller</ons-list-item>
+        <ons-list-item modifier="tapable" onclick="myNavigator.pushPage('Logs.html', { animation : 'slide' } );menu.toggleMenu();">Logs<span class="list-item-action">
+  <ons-icon icon="ion-plus-round" size="22px"></ons-icon>
+  </span>
+</ons-list-item> 
+<ons-list-item onclick="menu.toggleMenu()">
     Toggle Dark Theme
     <span class="list-item-action">
         <input type="checkbox" id="theme-toggle">
     </span>
 </ons-list-item>
-      
+       
   </ons-list>
         
 </ons-template>
@@ -111,15 +127,15 @@
 </ons-template>
 <ons-template id="singlegraph.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
       <b>Single Graph</b> </h4>
       <div id="paramscontainer" class="chartheight"></div>
   </ons-page>
 </ons-template>
 <ons-template id="parameters.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -239,46 +255,54 @@
       <div class="paramsbox" ng-if="ozoenabled" ng-show="dashboardVisibility['ozo']">
         <div class="paramslabel">{{ozon}}</div>
         <div class="paramsvalue" ng-click="invokegraph('OZO')">{{ozo}}</div>
-      </div >        
-        <div class="paramsbox" ng-show="dashboardVisibility['uv1']">
+      </div >     
+      <div class="paramsbox" ng-if="co2enabled" ng-show="dashboardVisibility['co2']">
+        <div class="paramslabel">{{co2n}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('CO2')">{{co2}}</div>
+      </div > 
+      <div class="paramsbox" ng-if="co2enabled" ng-show="dashboardVisibility['co2hum']">
+        <div class="paramslabel">{{co2humn}}</div>
+        <div class="paramsvalue" ng-click="invokegraph('CO2HUM')">{{co2hum}}</div>
+      </div >         
+      <div class="paramsbox" ng-show="dashboardVisibility['uv1']">
         <div class="paramslabel">{{uv1n}}</div>
-        <div class="paramsvalue">{{userVariables.uv1}}</div>    
+        <div class="paramsvalue" ng-click="invokegraph('UV1')">{{userVariables.uv1}}</div>
       </div>
-        <div class="paramsbox" ng-show="dashboardVisibility['uv2']">
+      <div class="paramsbox" ng-show="dashboardVisibility['uv2']">
         <div class="paramslabel">{{uv2n}}</div>
-        <div class="paramsvalue">{{userVariables.uv2}}</div> 
+        <div class="paramsvalue" ng-click="invokegraph('UV2')" >{{userVariables.uv2}}</div>   
       </div>
         <div class="paramsbox" ng-show="dashboardVisibility['uv3']">
         <div class="paramslabel">{{uv3n}}</div>
-        <div class="paramsvalue">{{userVariables.uv3}}</div>     
+        <div class="paramsvalue" ng-click="invokegraph('UV3')" >{{userVariables.uv3}}</div>
       </div>
-        <div class="paramsbox" ng-show="dashboardVisibility['uv4']">
+      <div class="paramsbox" ng-show="dashboardVisibility['uv4']">
         <div class="paramslabel">{{uv4n}}</div>
-        <div class="paramsvalue">{{userVariables.uv4}}</div>     
+        <div class="paramsvalue" ng-click="invokegraph('UV4')">{{userVariables.uv4}}</div>
       </div>
         <div class="paramsbox" ng-show="dashboardVisibility['uv5']">
         <div class="paramslabel">{{uv5n}}</div>
-        <div class="paramsvalue">{{userVariables.uv5}}</div>     
+        <div class="paramsvalue" ng-click="invokegraph('UV5')">{{userVariables.uv5}}</div>
       </div>
-        <div class="paramsbox" ng-show="dashboardVisibility['uv6']">
+      <div class="paramsbox" ng-show="dashboardVisibility['uv6']">
         <div class="paramslabel">{{uv6n}}</div>
-        <div class="paramsvalue">{{userVariables.uv6}}</div>     
+        <div class="paramsvalue" ng-click="invokegraph('UV6')">{{userVariables.uv6}}</div>   
       </div>
-        <div class="paramsbox" ng-show="dashboardVisibility['uv7']">
+      <div class="paramsbox" ng-show="dashboardVisibility['uv7']">
         <div class="paramslabel">{{uv7n}}</div>
-        <div class="paramsvalue">{{userVariables.uv7}}</div>     
+        <div class="paramsvalue" ng-click="invokegraph('UV7')">{{userVariables.uv7}}</div> 
       </div>
-        <div class="paramsbox" ng-show="dashboardVisibility['uv8']">
+      <div class="paramsbox" ng-show="dashboardVisibility['uv8']">
         <div class="paramslabel">{{uv8n}}</div>
-        <div class="paramsvalue">{{userVariables.uv8}}</div>     
+        <div class="paramsvalue" ng-click="invokegraph('UV8')">{{userVariables.uv8}}</div> 
       </div>
     </div>
   </ons-page>
 </ons-template>
 <ons-template id="flags.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status" >Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -328,23 +352,23 @@
       <br>
       <div class="flagslabel" ng-if="alertnoflag">No alert flags</div>
       <div class="flagslabel" ng-if="alertato">ATO Timeout</div>
-      <div class="iovalue" ng-if="alertato"><img src="images/clock.png"></div>
+      <div class="iovalue" ng-if="alertato"><img src="images/clock.png" alt="small clock icon"></div>
       <div class="flagslabel" ng-if="alertoverheat">Overheat</div>
-      <div class="iovalue" ng-if="alertoverheat"><img src="images/overheat.png"></div>
+      <div class="iovalue" ng-if="alertoverheat"><img src="images/overheat.png" alt="small overheat icon"></div>
       <div class="flagslabel" ng-if="alertbuslock">Bus Lock</div>
-      <div class="iovalue" ng-if="alertbuslock"><img src="images/buserror.png"></div>
+      <div class="iovalue" ng-if="alertbuslock"><img src="images/buserror.png" alt="Bus lock icon"></div>
       <div class="flagslabel" ng-if="alertleak">Water Leak</div>
       <div class="iovalue" ng-if="alertleak"><img src="images/leak.png"></div>
       <div class="flagslabel" ng-if="alertlightson">Lights On</div>
-      <div class="iovalue" ng-if="alertlightson"><img src="images/lights.png"></div>
+      <div class="iovalue" ng-if="alertlightson"><img src="images/lights.png" alt="Lights On icon"></div>
     </div>
     
   </ons-page>
 </ons-template>
 <ons-template id="io.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -428,8 +452,8 @@
 </ons-template>
 <ons-template id="dimming.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -479,23 +503,23 @@
       </center>
       <br>
       <div class="dimminglabel" ng-show="dashboardVisibility['pwmd1']" ng-class="pwmdclass">{{pwmd1n}}</div>
-      <div class="dimmingvalue" ng-show="dashboardVisibility['pwmd1']" ng-class="pwmdclass">{{pwmd}}%</div>
+      <div class="dimmingvalue" ng-show="dashboardVisibility['pwmd1']" ng-class="pwmdclass">{{ pwmd }}%</div>
       <div class="dimmingslider" ng-show="dashboardVisibility['pwmd1']" ng-click="dimmingoverride(0);">
-        <input type="range" class="range daylightslider" min="0" max="100" ng-model="pwmd" disabled>
+        <input type="range"  class="range daylightslider" min="0" max="100" ng-model="pwmd" disabled>
       </div>
       <div class="dimminglabel" ng-show="dashboardVisibility['pwma1']" ng-class="pwmaclass">{{pwma1n}}</div>
-      <div class="dimmingvalue" ng-show="dashboardVisibility['pwma1']" ng-class="pwmaclass">{{pwma}}%</div>
+      <div class="dimmingvalue" ng-show="dashboardVisibility['pwma1']" ng-class="pwmaclass">{{ pwma }}%</div>
       <div class="dimmingslider" ng-show="dashboardVisibility['pwma1']" ng-click="dimmingoverride(1);">
-        <input type="range" class="range actinicslider" min="0" max="100" ng-model="pwma" disabled>
+        <input type="range"  class="range actinicslider" min="0" max="100" ng-model="pwma" disabled>
       </div>
       <div ng-if="stardimmingenabled">
         <div class="dimminglabel" ng-show="dashboardVisibility['pwmd2']" ng-class="pwmd2class">{{pwmd2n}}</div>
-        <div class="dimmingvalue" ng-show="dashboardVisibility['pwmd2']" ng-class="pwmd2class">{{pwmd2}}%</div>
+        <div class="dimmingvalue" ng-show="dashboardVisibility['pwmd2']" ng-class="pwmd2class">{{ pwmd2 }}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwmd2']" ng-click="dimmingoverride(17);">
-          <input type="range" class="range daylightslider" min="0" max="100" ng-model="pwmd2" disabled>
+          <input type="range"  class="range daylightslider" min="0" max="100" ng-model="pwmd2" disabled>
         </div>
         <div class="dimminglabel" ng-show="dashboardVisibility['pwma2']" ng-class="pwma2class">{{pwma2n}}</div>
-        <div class="dimmingvalue" ng-show="dashboardVisibility['pwma2']" ng-class="pwma2class">{{pwma2}}%</div>
+        <div class="dimmingvalue" ng-show="dashboardVisibility['pwma2']" ng-class="pwma2class">{{ pwma2 }}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwma2']" ng-click="dimmingoverride(18);">
           <input type="range" class="range actinicslider" min="0" max="100" ng-model="pwma2" disabled>
         </div>
@@ -504,12 +528,12 @@
         <div class="dimminglabel" ng-show="dashboardVisibility['pwme0']" ng-class="pwme0class">{{pwme0n}}</div>
         <div class="dimmingvalue" ng-show="dashboardVisibility['pwme0']" ng-class="pwme0class">{{pwme0}}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwme0']" ng-click="dimmingoverride(2);">
-          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme0" disabled>
+          <input type="range"  class="range pwmeslider" min="0" max="100" ng-model="pwme0" disabled>
         </div>
         <div class="dimminglabel" ng-show="dashboardVisibility['pwme1']" ng-class="pwme1class">{{pwme1n}}</div>
         <div class="dimmingvalue" ng-show="dashboardVisibility['pwme1']" ng-class="pwme1class">{{pwme1}}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwme1']" ng-click="dimmingoverride(3);">
-          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme1" disabled>
+          <input type="range"  class="range pwmeslider" min="0" max="100" ng-model="pwme1" disabled>
         </div>
         <div class="dimminglabel" ng-show="dashboardVisibility['pwme2']" ng-class="pwme2class">{{pwme2n}}</div>
         <div class="dimmingvalue" ng-show="dashboardVisibility['pwme2']" ng-class="pwme2class">{{pwme2}}%</div>
@@ -519,17 +543,17 @@
         <div class="dimminglabel" ng-show="dashboardVisibility['pwme3']" ng-class="pwme3class">{{pwme3n}}</div>
         <div class="dimmingvalue" ng-show="dashboardVisibility['pwme3']" ng-class="pwme3class">{{pwme3}}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwme3']" ng-click="dimmingoverride(5);">
-          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme3" disabled>
+          <input type="range"  class="range pwmeslider" min="0" max="100" ng-model="pwme3" disabled>
         </div>
         <div class="dimminglabel" ng-show="dashboardVisibility['pwme4']" ng-class="pwme4class">{{pwme4n}}</div>
         <div class="dimmingvalue" ng-show="dashboardVisibility['pwme4']" ng-class="pwme4class">{{pwme4}}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwme4']" ng-click="dimmingoverride(6);">
-          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme4" disabled>
+          <input type="range"  class="range pwmeslider" min="0" max="100" ng-model="pwme4" disabled>
         </div>
         <div class="dimminglabel" ng-show="dashboardVisibility['pwme5']" ng-class="pwme5class">{{pwme5n}}</div>
         <div class="dimmingvalue" ng-show="dashboardVisibility['pwme5']" ng-class="pwme5class">{{pwme5}}%</div>
         <div class="dimmingslider" ng-show="dashboardVisibility['pwme5']" ng-click="dimmingoverride(7);">
-          <input type="range" class="range pwmeslider" min="0" max="100" ng-model="pwme5" disabled>
+          <input type="range"  class="range pwmeslider" min="0" max="100" ng-model="pwme5" disabled>
         </div>
       </div>
       <br>
@@ -539,8 +563,8 @@
 </ons-template>
 <ons-template id="userVariables.html">
   <ons-page ng-controller="Parameters" >
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div>
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -646,8 +670,8 @@
 </ons-template>    
 <ons-template id="customvar.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -718,8 +742,8 @@
 </ons-template>
 <ons-template id="rf.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -813,8 +837,8 @@
 </ons-template>
 <ons-template id="dcpump.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -876,8 +900,8 @@
 </ons-template>
 <ons-template id="dimmingoverride.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -929,7 +953,7 @@
       <div class="rflabel">{{dimmingoverridelabel}}</div>
       <br>
       <div class="dimminglabel">
-        <input type="text" class="text-input"  ng-model="dimmingoverridechange" size="3" maxlength="3">
+        <input type="text" class="text-input"  ng-model="dimmingoverridechange" size="3" maxlength="3" ng-change="convertToNumber()">
       </div>
       <div class="dimmingslider">
         <input type="range" ng-class="{{dimmingoverrideslider}}" min="0" max="100" ng-change="overridechange()" ng-model="dimmingoverridechange">
@@ -950,8 +974,8 @@
 </ons-template>
 <ons-template id="cvarupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -1019,8 +1043,8 @@
 </ons-template>
 <ons-template id="rfmodeupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -1087,8 +1111,8 @@
 </ons-template>
 <ons-template id="dcmodeupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -1155,8 +1179,8 @@
 </ons-template>
 <ons-template id="speedupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -1224,8 +1248,8 @@
 </ons-template>
 <ons-template id="durationupdate.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Status</b>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Status</b>
     </h4>
     <div ng-controller="Parameters">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
@@ -1293,8 +1317,8 @@
 </ons-template>
 <ons-template id="relay.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Relay</b> </h4>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Relay</b> </h4>
     <div ng-controller="Relay">
       <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
@@ -1302,7 +1326,7 @@
       <div class="lastupdatedvalue">{{lastupdated}}</div>
       <div class="lastupdatedlabel">Current mode: </div>
       <div class="lastupdatedvalue">{{currentMode}}</div>
-      <div class="relayheader" ng-click="invokegraph(n)" ng-if="mainenabled">Main Box</div>
+      <div class="relayheader" ng-click="invokegraph()" ng-if="mainenabled">Main Box</div>
       <div ng-if="mainenabled" ng-repeat="n in [1,2,3,4,5,6,7,8]">
         <div class="relaylabel"><span ng-bind="r{{n}}n"></span></div>
         <div class="cvarvalue">
@@ -1350,12 +1374,13 @@
 </ons-template>
 <ons-template id="graph.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Graph</b> </h4>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Graph</b> </h4>
     <div ng-controller="Graph">
       <div id="container"></div>
       <center ng-show="showgraphlist">
         <div class="graphlist">
+            
           <ul class="list, nobottomline">
             <li class="list__item list__item--tappable">
               <label class="checkbox
@@ -1487,18 +1512,50 @@
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
               {{ozon}}
-              </label>    
-                
+              </label> 
+            <li class="list__item list__item--tappable" ng-if="co2enabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="$parent.graphco2">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{co2n}}
+              </label> 
+            <li class="list__item list__item--tappable" ng-if="co2enabled">
+              <label class="checkbox
+                      checkbox--noborder checkbox--list-item">
+              <input type="checkbox" ng-model="$parent.graphco2hum">
+              <div class="checkbox__checkmark
+                        checkbox--noborder checkbox--list-item__checkmark"></div>
+              {{co2humn}}
+              </label>   
             <li class="list__item list__item--tappable">
               <label class="checkbox
                       checkbox--noborder checkbox--list-item">
               <input type="checkbox" ng-model="$parent.graphcustom">
               <div class="checkbox__checkmark
                         checkbox--noborder checkbox--list-item__checkmark"></div>
-               Custom: <input type="text" class="text-input" ng-model="graphcustomitems"><br>
+               Custom: <input type="text" class="text-input custom-margin" ng-model="graphcustomitems"><br>
                Enter your custom parameters separated by a comma.
               </label>
             </li>
+         <!--
+            <li class="list__item list__item--tappable">
+            <select ng-model="selectedRelay" ng-change="fetchLogs(selectedRelay); loadPortLabels(selectedRelay)" ng-init="selectedRelay='default' ">
+              <option value="default" disabled>Select Relay Box</option>
+              <option ng-if="!star" value="r">Main Relay</option>
+               <option ng-repeat="n in [1,2,3,4,5,6,7,8]" ng-if="rexpansionEnabled && exp[n]" value="r{{n}}">
+                Expansion Box {{n}}
+               </option>
+             </select>
+             <select ng-model="selectedPort" ng-if="selectedRelay !== 'default'" ng-change="setPort(selectedPort)">
+              <option value="" disabled>Select Port</option>
+              <option ng-repeat="port in [1, 2, 3, 4, 5, 6, 7, 8]" ng-value="labelMap[selectedRelay + port + 'n']">
+              {{ labelMap[selectedRelay + port + 'n'] }}
+               </option>
+               </select>
+               </li>
+       -->
           </ul>
           <br>
         </div>
@@ -1513,8 +1570,8 @@
 </ons-template>  
 <ons-template id="settings.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Settings</b> </h4>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Settings</b> </h4>
     <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
     <div ng-controller="Settings">
@@ -1535,12 +1592,13 @@
          </div>
         <div class="button-bar__item" ng-if="isAuthenticated" >
     <input type="radio" name="status_buttons" ng-click="loademailstab();">
-    <button class="button-bar__button">Email Alerts</button>
+    <button class="button-bar__button">User Alerts</button>
 </div>
         </div>
         <br>
         <div>
           <button class="button button--cta normalbutton" ng-click="addcontroller();">Add Controller</button>
+          <a href="https://forum.reefangel.com/webwizard/wizard_board.php" class="button button--cta normalbutton">Setup Controller</a>
         </div>
         <br>
         <div class="controllerlist">
@@ -1559,8 +1617,8 @@
 </ons-template>    
 <ons-template id="internalmemory.html">
   <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Settings</b> </h4>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Settings</b> </h4>
     <div ng-controller="InternalMemory">
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;">
@@ -1578,7 +1636,7 @@
             </div>
             <div class="button-bar__item"   >
         <input type="radio" name="status_buttons" ng-click="loademailstab();">
-        <button class="button-bar__button">Email Alerts</button>
+        <button class="button-bar__button">User Alerts</button>
             </div>
             </div>
         <br>
@@ -1798,8 +1856,8 @@
 <ons-template id="addcontroller.html">
 <ons-page>
     <h4 style="color: #999; text-align: center">
-      <img src="images/logo.png"><br>
-      <b>Settings</b>
+      <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Settings</b>
     </h4>
     <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
     <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
@@ -1857,8 +1915,8 @@
        <!-- Labels--> 
 <ons-template id="labels.html">
     <ons-page>
-    <h4 style="color: #999; text-align: center"> <img src="images/logo.png"><br>
-      <b>Settings</b> </h4>
+    <h4 style="color: #999; text-align: center"> <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Settings</b> </h4>
     <div ng-controller="labels">
       <center>
         <div class="button-bar" style="width:100%;padding-top:10px;">
@@ -1877,7 +1935,7 @@
             </div>
             <div class="button-bar__item" >
     <input type="radio" name="status_buttons" ng-click="loademailstab();">
-    <button class="button-bar__button">Email Alerts</button>
+    <button class="button-bar__button">User Alerts</button>
             </div>
         </div>
         <br>
@@ -1912,13 +1970,18 @@
                 <label ><strong>PH</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.phn" class="text-input"/>
             <br>
+                <div ng-if="salintyenabled">
             <label><strong>Salinity</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.saln" class="text-input"/>
             <br>
+              </div>
+                <div ng-if="orpenabled">
             <label><strong>ORP</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.orpn" class="text-input"/>
             <br>
-                <label><strong>Water Level 0</strong></label><br>
+              </div>
+            <div ng-if="multiwlenabled">
+                <label><strong>Water Level</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.wln" class="text-input"/>
             <br>
                 <label><strong>Water Level 1</strong></label><br>
@@ -1933,20 +1996,37 @@
                 <label><strong>Water Level 4</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.wl4n" class="text-input"/>
             <br>
+            </div>
+                <div ng-if="humenabled">
                 <label><strong>Humidity</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.humn" class="text-input"/>
                 <br>
+                </div>
+             <div ng-if="parenabled">
                 <label><strong>PAR</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.parn" class="text-input"/>
             <br>
+                 </div>
+                <div ng-if="pheenabled">
                 <label><strong>PH Exp</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.phen" class="text-input"/>
             <br>
+              </div>
+                <div ng-if="ozoenabled">
                 <label><strong>Ozone</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.ozon" class="text-input"/>
-            <br>                
+            <br>    
+            </div>
+                <div ng-if="co2enabled">
+                <label><strong>Co2</strong></label><br>
+             <input type="text" maxlength="16" ng-model="labels.co2n" class="text-input"/>
+            <br>  
+                <label><strong>Co2-Humidity</strong></label><br>
+             <input type="text" maxlength="16" ng-model="labels.co2humn" class="text-input"/>
+            <br>   
+                    </div>
           </ons-list-item>            
-            <ons-list>
+            <ons-list ng-if="!star" >
            <ons-list-item ng-click="toggleGroup(1)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(1)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(1)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(1)"></ons-icon>
@@ -1982,18 +2062,16 @@
              <input type="text" maxlength="16" ng-model="labels.r8n" class="text-input"/>
            </ons-list-item>
             
-            <ons-list>
+            <ons-list ng-if="relayVisibility.r1" >
            <ons-list-item ng-click="toggleGroup(2)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(2)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(2)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(2)"></ons-icon>
            Univeral Relay 1 </ons-list-item>
                 </ons-list>
-                <ons-list-item class="item-accordion" ng-if="isGroupShown(2)">
-            
+                <ons-list-item  class="item-accordion" ng-if="isGroupShown(2)">
                 <p>Please Set Relay Labels.
             <br>Note: leave blank for default Labels or if you don't have that relay box enabled
                 </p>
-                
                 <label ><strong>Universal Relay Box 1 Port 1</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.r11n" class="text-input"/>
             <br>
@@ -2019,13 +2097,13 @@
              <input type="text" maxlength="16" ng-model="labels.r18n" class="text-input"/>
            </ons-list-item>
             
-            <ons-list>
-            <ons-list-item ng-click="toggleGroup(3)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(3)}">
+            <ons-list ng-if="relayVisibility.r2">
+            <ons-list-item   ng-click="toggleGroup(3)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(3)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(3)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(3)"></ons-icon>
            Univeral Relay 2 </ons-list-item>
                 </ons-list>
-            <ons-list-item class="item-accordion" ng-if="isGroupShown(3)">
+            <ons-list-item  class="item-accordion" ng-if="isGroupShown(3)">
             
                 <p>Please Set Relay Labels.
             <br>Note: leave blank for default Labels or if you don't have that relay box enabled
@@ -2056,13 +2134,13 @@
            </ons-list-item>
             
                 
-             <ons-list>
+             <ons-list ng-if="relayVisibility.r3">
             <ons-list-item ng-click="toggleGroup(4)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(4)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(4)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(4)"></ons-icon>
            Univeral Relay 3 </ons-list-item>
                 </ons-list>
-                <ons-list-item class="item-accordion" ng-if="isGroupShown(4)">
+                <ons-list-item  class="item-accordion" ng-if="isGroupShown(4)">
             
                 <p>Please Set Relay Labels.
             <br>Note: leave blank for default Labels or if you don't have that relay box enabled
@@ -2092,13 +2170,13 @@
                 <label ><strong>Universal Relay Box 3 Port 8</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.r38n" class="text-input"/>
            </ons-list-item>
-             <ons-list>
-            <ons-list-item ng-click="toggleGroup(5)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(5)}">
+             <ons-list ng-if="relayVisibility.r4" >
+            <ons-list-item  ng-click="toggleGroup(5)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(5)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(5)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(5)"></ons-icon>
            Univeral Relay 4 </ons-list-item>
                 </ons-list>
-                <ons-list-item class="item-accordion" ng-if="isGroupShown(5)">
+                <ons-list-item  class="item-accordion" ng-if="isGroupShown(5)">
             
                 <p>Please Set Relay Labels.
             <br>Note: leave blank for default Labels or if you don't have that relay box enabled
@@ -2128,8 +2206,8 @@
                 <label ><strong>Universal Relay Box 4 Port 8</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.r48n" class="text-input"/>
            </ons-list-item>
-             <ons-list>
-            <ons-list-item ng-click="toggleGroup(6)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(6)}">
+             <ons-list ng-if="relayVisibility.r5" >
+            <ons-list-item  ng-click="toggleGroup(6)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(6)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(6)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(6)"></ons-icon>
            Univeral Relay 5 </ons-list-item>
@@ -2162,8 +2240,8 @@
                 <label ><strong>Universal Relay Box 5 Port 8</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.r58n" class="text-input"/>
            </ons-list-item>
-             <ons-list>
-            <ons-list-item ng-click="toggleGroup(7)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(7)}">
+             <ons-list ng-if="relayVisibility.r6">
+            <ons-list-item  ng-click="toggleGroup(7)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(7)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(7)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(7)"></ons-icon>
            Univeral Relay 6 </ons-list-item>
@@ -2196,7 +2274,7 @@
                 <label ><strong>Universal Relay Box 6 Port 8</strong></label><br>
              <input type="text" maxlength="16" ng-model="labels.r68n" class="text-input"/>
            </ons-list-item>
-             <ons-list>
+             <ons-list ng-if="relayVisibility.r7" >
             <ons-list-item ng-click="toggleGroup(8)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(8)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(8)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(8)"></ons-icon>
@@ -2230,8 +2308,8 @@
                 <label ><strong>Universal Relay Box 7 Port 8</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.r78n" class="text-input"/>
            </ons-list-item>
-             <ons-list>
-            <ons-list-item ng-click="toggleGroup(9)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(9)}">
+             <ons-list ng-if="relayVisibility.r8" >
+            <ons-list-item ng-if="relayVisibility.r8"  ng-click="toggleGroup(9)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(9)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(9)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(9)"></ons-icon>
            Univeral Relay 8 </ons-list-item>
@@ -2282,12 +2360,15 @@
                 <label ><strong>Daylight Channel</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.pwmd1n" class="text-input"/>
             <br>
+                <div ng-if="star">
                 <label ><strong>Actinic 2 Channel</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.pwma2n" class="text-input"/>
             <br>
                 <label ><strong>Daylight 2 Channel</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.pwmd2n" class="text-input"/>
             <br>
+                    </div>
+                <div ng-if="dimmingexpansionenabled";>
                     <p><strong>Dimming Expansion:</strong></p>
                 <label ><strong>Channel 0</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.pwme0n" class="text-input"/>
@@ -2307,8 +2388,9 @@
                 <label ><strong>Channel 5</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.pwme5n" class="text-input"/>
             <br>
+                  </div>
            </ons-list-item>
-                         <ons-list>
+                <ons-list>
             <ons-list-item ng-click="toggleGroup(11)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(11)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(11)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(11)"></ons-icon>
@@ -2325,12 +2407,15 @@
                 <label ><strong>ATO Low</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.atohighn" class="text-input"/>
             <br>
+            <div ng-if="star">
                 <label ><strong>Alarm</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.alarmn" class="text-input"/>
             <br>
                     <label ><strong>Leak</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.leakn" class="text-input"/>
             <br>
+                </div>
+                    <div ng-if="ioenabled">
                     <p><strong>IO Expansion:</strong></p>
                 <label ><strong>IO 0</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.io0n" class="text-input"/>
@@ -2356,9 +2441,10 @@
                   <label ><strong>IO 7</strong></label><br>
             <input type="text" maxlength="16" ng-model="labels.io7n" class="text-input"/>
             <br>
+                        </div>
            </ons-list-item>
-                         <ons-list>
-            <ons-list-item ng-click="toggleGroup(12)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(12)}">
+                <ons-list ng-if="cvarenabled">
+            <ons-list-item  ng-click="toggleGroup(12)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(12)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(12)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(12)"></ons-icon>
            Custom Variables</ons-list-item>
@@ -2392,13 +2478,13 @@
             <input type="text" maxlength="16" ng-model="labels.c7n" class="text-input"/>
             <br>
            </ons-list-item>
-               <ons-list>
+               <ons-list ng-if="rfenabled" >
             <ons-list-item ng-click="toggleGroup(13)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(13)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(13)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(13)"></ons-icon>
            RF Channels</ons-list-item>
                 </ons-list>
-                <ons-list-item class="item-accordion" ng-if="isGroupShown(13)">
+                <ons-list-item  class="item-accordion" ng-if="isGroupShown(13)">
                 <p>Please Set RF Expansion Channel Labels.
             <br>Note: leave blank for default Labels.
                 </p>
@@ -2421,13 +2507,13 @@
             <input type="text" maxlength="16" ng-model="labels.rfin" class="text-input"/>
             <br>
            </ons-list-item>
-             <ons-list>
-             <ons-list-item ng-click="toggleGroup(14)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(14)}">
+             <ons-list ng-if="rfenabled">
+             <ons-list-item  ng-click="toggleGroup(14)" class="accordiontitle" ng-class="{accordionactive:isGroupShown(14)}">
             <ons-icon icon="ion-minus-circled" ng-if="isGroupShown(14)"></ons-icon>
             <ons-icon icon="ion-plus-circled" ng-if="!isGroupShown(14)"></ons-icon>
            Aqua Illumination</ons-list-item>
                  </ons-list>
-            <ons-list-item class="item-accordion" ng-if="isGroupShown(14)">
+            <ons-list-item  class="item-accordion" ng-if="isGroupShown(14)">
                 <p>Please Set Aqua Illumination Labels.
             <br>Note: leave blank for default Labels.
                 </p>
@@ -2492,8 +2578,8 @@
 <ons-template id="emailalerts.html">
         <ons-page>
          <h4 style="color: #999; text-align: center">
-      <img src="images/logo.png"><br>
-      <b>Settings</b>
+      <img src="images/logo.png" alt="Reef Angel Logo"><br>
+      <b class="status">Settings</b>
     </h4>
              <div class="lastupdatedlabel" ng-if="cloudenabled">Cloud status: </div>
       <div class="lastupdatedvalue" ng-if="cloudenabled">{{cloudstatus}}</div>
@@ -2515,40 +2601,55 @@
           </div>
             <div class="button-bar__item" >
             <input type="radio" name="status_buttons"  ng-click="loademailstab();" checked>
-            <button class="button-bar__button">Email Alerts</button>
+            <button class="button-bar__button">User Alerts</button>
           </div>
         </div>
           
           <br>
         <div>
-            <form class = "alertform" >
-                <div class="form-banner">
-                <p>Please set your email alerts.</p>
-                </div>
-                <p><strong>Note:</strong> For Relay Ports and Flags just set on or off and no value.</p>
-                <p>For IO just set it = to 1 or 0. The value will depends on how you have it oriented </p>
-                <p>Please seperate multiple email address's with a comma.You do not have to input the email addres for each alert just input it once. To change the email or add an email you must reenter it into the form below</p>
-                <p><strong>Note:</strong> You cannot enable disconnect Alert without first submitting your email address, and not until data has been received form your controller.</p>
-                <label><strong>Reefangel Disconnect Alert:</strong></label> <br>
-                <ons-switch ng-model="noDataAlertEnabled" ng-change="onNoDataAlertToggle()"></ons-switch>
-                <p>If enabled you will receive an alert if no data is received from your controller.</p>
-                <ons-list class="emaillistitem">
+<form class="alertform">
+    
+    <div class="form-banner">
+        <p>Please set your email alerts.</p>
+    </div>
+    <p><strong>Note:</strong> For Relay Ports and Flags just set on or off and no value.</p>
+    <p>For IO just set it = to 1 or 0. The value will depend on how you have it oriented.</p>
+    <p>Please separate multiple email addresses with a comma. You do not have to input the email address for each alert just input it once. To change the email or add an email you must reenter it into the form below.</p>
+    <p><strong>Note:</strong> You cannot enable disconnect Alert until data has been received from your controller.</p>
+    <label><strong>Reefangel Disconnect Alert:</strong></label><br>
+    <ons-switch ng-model="noDataAlertEnabled" ng-change="onNoDataAlertToggle()"></ons-switch>
+    <p>If enabled, you will receive an alert if no data is received from your controller.</p>
+            <label><strong>Notification Type:</strong></label><br>
+            <label>
+                <input type="radio" ng-model="alert.notificationType" value="email" ng-change="onNotificationTypeChange()">
+                Email 
+            </label>
+            <label>
+                <input type="radio" ng-model="alert.notificationType" ng-change="checkNotificationPermission()" value="push" ng-change="onNotificationTypeChange()">
+                Push Notifications
+            </label>
+     <a id="top"></a>
+    <br>
+    <br>
+    
+    <ons-list class="emaillistitem">
+                      
                     <ons-list-item class="emaillistitem">
                         <label><strong>Alert Name</strong></label>
                         <br>
-                        <input type="text" maxlength="50" class="text-input" ng-model="alert.name" placeholder="Enter alert name" required>
+                        <input type="text" maxlength="50" class="text-input" ng-model="alert.name" placeholder="Enter alert name" required> 
                     </ons-list-item>
                    
                      <ons-list-item class="emaillistitem">
                         <button class="button" ng-click="showDialog()">Choose Parameter</button>
                         <br>
-                     <input type="text" class="text-input" ng-model="alert.parameterlabel" placeholder="No parameter selected" readonly>
+                     <input type="text" class="text-input" ng-model="alert.parameterlabel" placeholder="No parameter selected" required readonly>
                     </ons-list-item>
                     
                     <ons-list-item class="emaillistitem">
     <button class="button" ng-click="showConditionDialog()">Choose Condition</button>
                         <br>                        
-    <input type="text" class="text-input" ng-model="alert.conditionlabel" placeholder="No condition selected" readonly>
+    <input type="text" class="text-input" ng-model="alert.conditionlabel" placeholder="No condition selected" required readonly>
                    </ons-list-item>
                     <br>
                     <ons-list-item class="emaillistitem">
@@ -2556,6 +2657,12 @@
                         <br>
                         <input type="number" class="text-input" ng-model="alert.value" ng-disabled="disableValue()" placeholder="Enter value">
                     </ons-list-item>
+<ons-list-item class="emaillistitem">
+    <label><strong>Send Interval</strong></label><br>
+    <input type="number" class="text-input" ng-model="alert.interval" min="1" max="24" step="1" placeholder="1-24" value="1" >
+</ons-list-item>
+
+     
                       
                     <ons-list-item class="emaillistitem">
                         <label><strong>Description</strong></label>
@@ -2567,11 +2674,11 @@
                         <br>
                         <textarea class="description-input" maxlength="255" ng-model="alert.emailaddress" placeholder="Enter email address"></textarea><br>
                     </ons-list-item>
-                </ons-list>                
-                <div style="padding: 10px;">
-                    <ons-button class="button button--cta normalbutton" ng-click="addAlert();">Add Alert</ons-button>
-                </div>  
-            </form>  
+    </ons-list>
+    <div style="padding: 10px;">
+        <ons-button class="button button--cta normalbutton" ng-click="addAlert();">Submit</ons-button>
+    </div>
+</form>
             </div>
          <br>
         
@@ -2601,6 +2708,7 @@
         <th>Parameter</th>
         <th>Condition Value</th>
         <th>Alert Value</th>
+        <th>Send Interval</th>
         <th>Alert Description</th>
         <th>Action</th>
       </tr>
@@ -2611,9 +2719,11 @@
         <td>{{ alert.ParameterName }}</td>
         <td>{{ alert.ConditionSymbol }}</td>
         <td>{{ alert.Value }}</td>
+        <td>{{ alert.AlertInterval}}h</td>  
         <td>{{ alert.AlertDescription }}</td>
         <td>
-          <ons-icon icon="ion-trash-a" class="controllerlistaction" ng-click="deleteAlert(alert.AlertID);"></ons-icon>
+          <ons-icon icon="ion-edit" class="icon-touch" ng-click="editAlert(alert);"></ons-icon> 
+          <ons-icon icon="ion-trash-a" class="icon-touch" ng-click="deleteAlert(alert.AlertID);"></ons-icon>
 
         </td>
       </tr>
@@ -2656,11 +2766,11 @@
     <ons-dialog>
         <div style="text-align: center; margin: 10px;">
             <p>Enter your Reef Angel IP Address:</p>
-            <p><input type="text" class="text-input" ng-model="enteredIpAddress" placeholder="IP Address"></p>
+            <!-- Attempt to bind to parentScope.enteredIpAddress -->
+            <p><input type="text" class="text-input" ng-model="$root.enteredIpAddress" placeholder="IP Address"></p>
             <p>
                 <ons-button modifier="quiet" ng-click="saveEnteredIpAddress()">Save</ons-button>
                 <ons-button modifier="quiet" ng-click="closeIpInputDialog()">Cancel</ons-button>
-                
             </p>
         </div>
     </ons-dialog>
@@ -2698,7 +2808,7 @@
       <!-- Email Reminder Checkbox -->
       <p>
         <input type="checkbox" id="emailReminderCheckbox" ng-model="task.sendEmailReminder">
-        <label for="emailReminderCheckbox">Send Email Reminder</label>
+        <label for="emailReminderCheckbox">Send Reminder</label>
       </p>
       
       <!-- Save and Cancel Buttons -->
@@ -2725,8 +2835,7 @@
       </div>
     </div>
   </ons-dialog>
-</ons-template>
-    
+</ons-template>   
 <ons-template id="edit-dashboard.html">
   <ons-page>
     <ons-toolbar>
@@ -2765,44 +2874,51 @@
         <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.t5"> <b>Show: </b> Temp 5</label></div>
         <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.t6"> <b>Show: </b> Temp 6</label></div>
         <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.ph"> <b>Show: </b> PH</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.sal"> <b>Show: </b> Salinity</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.orp"> <b>Show: </b> Orp</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.phe"> <b>Show: </b> PH Exp</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl"> <b>Show: </b> Water Level</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl1"> <b>Show: </b> Water Level 1</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl2"> <b>Show: </b> Water Level 2</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl3"> <b>Show: </b> Water Level 3</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl4"> <b>Show: </b> Water Level 4</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.hum"> <b>Show: </b> Humidity</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.par"> <b>Show: </b> Par</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.c02"> <b>Show: </b> C02</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.ozo"> <b>Show: </b> Ozone</label></div>  
+        <div ng-if="salinityenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.sal"> <b>Show: </b> Salinity</label></div>
+        <div ng-if="orpenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.orp"> <b>Show: </b> Orp</label></div>
+        <div ng-if="pheenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.phe"> <b>Show: </b> PH Exp</label></div>
+          
+        <div ng-if="multiwlenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl"> <b>Show: </b> Water Level</label></div>
+        <div ng-if="multiwlenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl1"> <b>Show: </b> Water Level 1</label></div>
+        <div ng-if="multiwlenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl2"> <b>Show: </b> Water Level 2</label></div>
+        <div ng-if="multiwlenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl3"> <b>Show: </b> Water Level 3</label></div>
+        <div ng-if="multiwlenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.wl4"> <b>Show: </b> Water Level 4</label></div>
+       
+        <div ng-if="humenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.hum"> <b>Show: </b> Humidity</label></div>
+        <div ng-if="parenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.par"> <b>Show: </b> Par</label></div>
+        <div ng-if="co2enabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.co2"> <b>Show: </b> C02</label></div>
+        <div ng-if="co2enabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.co2hum"> <b>Show: </b> Co2 Humidity</label></div>  
+        <div ng-if="ozoenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.ozo"> <b>Show: </b> Ozone</label></div>  
       </div>
      <div class="tab-content settings-container"ng-show="currentTab === 'io'">
         <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.atohigh"> <b>Show: </b> ATO High</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.atolow"> <b>Show: </b> ATO Low</label></div>  
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.alarm"> <b>Show: </b> Alarm</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.leak"> <b>Show: </b> Leak</label></div>
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io0"> <b>Show: </b> IO 0</label></div>  
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io1"> <b>Show: </b> IO 1</label></div>   
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io2"> <b>Show: </b> IO 2</label></div> 
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io3"> <b>Show: </b> IO 3</label></div> 
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io4"> <b>Show: </b> IO 4</label></div> 
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io5"> <b>Show: </b> IO 5</label></div> 
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io6"> <b>Show: </b> IO 6</label></div> 
-        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io7"> <b>Show: </b> IO 7</label></div>   
+        <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.atolow"> <b>Show: </b> ATO Low</label></div>
+        
+        <div ng-if="star" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.alarm"> <b>Show: </b> Alarm</label></div>
+        <div ng-if="star" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.leak"> <b>Show: </b> Leak</label></div>
+         
+       
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io0"> <b>Show: </b> IO 0</label></div>  
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io1"> <b>Show: </b> IO 1</label></div>   
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io2"> <b>Show: </b> IO 2</label></div> 
+        <div ng-if="ioenabled"  class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io3"> <b>Show: </b> IO 3</label></div> 
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io4"> <b>Show: </b> IO 4</label></div> 
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io5"> <b>Show: </b> IO 5</label></div> 
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io6"> <b>Show: </b> IO 6</label></div> 
+        <div ng-if="ioenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.io7"> <b>Show: </b> IO 7</label></div>   
+           
       </div>
       <div class="tab-content settings-container" ng-show="currentTab === 'dimming'">
           <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwmd1"> <b>Show: </b> Daylight 1</label></div>
           <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwma1"> <b>Show: </b> Actinic 1</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwmd2"> <b>Show: </b> Daylight 2</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwma2"> <b>Show: </b> Actinic 2</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme0"> <b>Show: </b> Dimming Channel 0</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme1"> <b>Show: </b> Dimming Channel 1</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme2"> <b>Show: </b> Dimming Channel 2</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme3"> <b>Show: </b> Dimming Channel 3</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme4"> <b>Show: </b> Dimming Channel 4</label></div>
-          <div class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme5"> <b>Show: </b> Dimming Channel 5</label></div>
+          <div ng-if="star" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwmd2"> <b>Show: </b> Daylight 2</label></div>
+          <div ng-if="star" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwma2"> <b>Show: </b> Actinic 2</label></div>
+          <div ng-if="dimmingexpansionenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme0"> <b>Show: </b> Dimming Channel 0</label></div>
+          <div ng-if="dimmingexpansionenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme1"> <b>Show: </b> Dimming Channel 1</label></div>
+          <div ng-if="dimmingexpansionenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme2"> <b>Show: </b> Dimming Channel 2</label></div>
+          <div ng-if="dimmingexpansionenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme3"> <b>Show: </b> Dimming Channel 3</label></div>
+          <div ng-if="dimmingexpansionenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme4"> <b>Show: </b> Dimming Channel 4</label></div>
+          <div ng-if="dimmingexpansionenabled" class="settings-item"><label><input type="checkbox" ng-model="dashboardVisibility.pwme5"> <b>Show: </b> Dimming Channel 5</label></div>
         <!-- Dimming settings checkboxes -->
       </div>
              
@@ -2844,23 +2960,123 @@
   <br>
 </ons-template>
 <ons-template id="calibrate.html">
-  <ons-toolbar>
-    <div class="left" style="line-height: 44px">
-      <ons-back-button>Back</ons-back-button>
-    </div>
-    <div class="center"><b>Calibrate</b></div>
-  </ons-toolbar>
-  <button class="button button--large--cta" ng-click="getcontrollerdata('cal0');">pH</button>
-  <br>
-  <button class="button button--large--cta" ng-click="getcontrollerdata('cal1');">Salinity</button>
-  <br>
-  <button class="button button--large--cta" ng-click="getcontrollerdata('cal2');">ORP</button>
-  <br>
-  <button class="button button--large--cta" ng-click="getcontrollerdata('cal3');">pH Expansion</button>
-  <br>
-  <button class="button button--large--cta" ng-click="getcontrollerdata('cal4');">Water Level</button>
-  <br>
+  <ons-page ng-controller="CalibrateController">
+    <ons-toolbar>
+      <div class="left">
+        <ons-back-button>Back</ons-back-button>
+      </div>
+      <div class="center"><b>Calibrate</b></div>
+    </ons-toolbar>
+
+    <button class="button button--large--cta calibrate-button" ng-click="toggleList('standard')">Standard Calibrations</button>
+    <ons-list class="calibratelist" ng-show="showStandardList">
+      <ons-list-item modifier="tappable" ng-click="calibrate('calph')" class="standard-list-item">pH</ons-list-item>
+      <ons-list-item modifier="tappable" ng-if="salinityenabled" ng-click="calibrate('calsal')" class="standard-list-item">Salinity</ons-list-item>
+      <ons-list-item modifier="tappable" ng-if="orpenabled" ng-click="calibrate('calorp')" class="standard-list-item">ORP</ons-list-item>
+      <ons-list-item modifier="tappable" ng-if="pheenabled" ng-click="calibrate('calphe')" class="standard-list-item">pH Expansion</ons-list-item>
+      <div ng-if="multiwlenabled" >
+      <ons-list-item modifier="tappable" ng-click="calibrate('calwl')" class="standard-list-item">Water Level</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calwl1')" class="standard-list-item">Water Level 1</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calwl2')" class="standard-list-item">Water Level 2</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calwl3')" class="standard-list-item">Water Level 3</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calwl4')" class="standard-list-item">Water Level 4</ons-list-item>
+     </div>
+    </ons-list>
+      <div ng-if="customcal">
+    <button class="button button--large--cta calibrate-button" ng-click="toggleList('custom')">Custom Expansion Calibrations</button>
+    <ons-list class="calibratelist"  ng-show="showCustomList">
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus1')" class="standard-list-item">Custom Expansion 1</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus2')" class="standard-list-item">Custom Expansion 2</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus3')" class="standard-list-item">Custom Expansion 3</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus4')" class="standard-list-item">Custom Expansion 4</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus5')" class="standard-list-item">Custom Expansion 5</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus6')" class="standard-list-item">Custom Expansion 6</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus7')" class="standard-list-item">Custom Expansion 7</ons-list-item>
+      <ons-list-item modifier="tappable" ng-click="calibrate('calcus8')" class="standard-list-item">Custom Expansion 8</ons-list-item>
+    </ons-list>
+          </div>
+  </ons-page>
 </ons-template>
+    
+<ons-template id="Logs.html">
+  <ons-page>
+    <ons-toolbar>
+      <div class="left"><ons-back-button>Back</ons-back-button></div>
+      <div class="center"><b>Device Logs</b></div>
+    </ons-toolbar>
+      
+    <div style="margin-top: 30px;">
+    <div class="centered-content">
+    <center>
+            <span><h4>Device Logs</h4></span>
+        <p>
+            Please Select the type of logs you would like to view.
+
+        </p>
+    </center>
+</div>   
+      <div ng-controller="Logs">
+           <center>
+      <ons-segment style="width: 100%;">
+        <button class="tab-button" ng-click="changeTab('flags')">Alert Flags</button>
+        <button class="tab-button" ng-click="changeTab('io')">IO</button>
+        <button class="tab-button" ng-click="changeTab('Relay')">Relay</button>
+      </ons-segment>
+         </center>
+          <hr>
+<div class="tab-content settings-container" ng-show="currentTab === 'flags'">
+    <ul>
+        <li ng-repeat="log in logs.flags| orderBy: '-rawTimestamp'" class="log-item"> <!-- Sort by timestamp descending -->
+            <strong>{{ log.timestamp | date: 'medium' }}:</strong> {{ log.changeDescription }}
+        </li>
+    </ul>
+</div>
+<div class="tab-content settings-container" ng-show="currentTab === 'io'">
+    <select ng-model="selectedIOChannel" ng-change="fetchLogs(selectedIOChannel)" ng-init="selectedIOChannel='default'">
+        <option value="default" disabled>Select IO Channel Or Expansion</option>
+        <option value="atohigh">{{ atohighn }}</option>
+        <option value="atolow">{{ atolown }}</option>
+        <option value="alarm" ng-show="star">{{ alarmn }}</option>
+        <option value="io" ng-show="ioexpansion">IO Expansion</option>
+    </select>
+<ul ng-if="['atohigh', 'atolow', 'alarm'].includes(selectedIOChannel)">
+    <li ng-repeat="log in logs.other | orderBy: '-rawTimestamp'" class="log-item">
+        <strong>{{ log.timestamp | date: 'medium' }}:</strong> {{ log.changeDescription }}
+    </li>
+</ul>
+<ul ng-if="selectedIOChannel === 'io'">
+    <li ng-repeat="log in logs.io | orderBy: '-rawTimestamp'" class="log-item">
+        <strong>{{ log.timestamp | date: 'medium' }}:</strong> {{ log.changeDescription }}
+    </li>
+</ul>
+</div>
+<div class="tab-content settings-container" ng-show="currentTab === 'Relay'">
+    <select ng-model="selectedRelay" ng-change="fetchLogs(selectedRelay); loadPortLabels(selectedRelay)" ng-init="selectedRelay='default' ">
+        <option value="default" disabled>Select Relay Box</option>
+        <option ng-if="!star" value="r">Main Relay</option>
+        <option ng-repeat="n in [1,2,3,4,5,6,7,8]" ng-if="rexpansionEnabled && exp[n]" value="r{{n}}">
+            Expansion Box {{n}}
+        </option>
+    </select>
+<select ng-model="selectedPort" ng-show="selectedRelay !== 'default'" ng-change="setPort(selectedPort)">
+     <option value="" disabled>Select Port</option>
+    <option value=" " selected>All Ports</option> <!-- Change the value to an empty string -->
+    <option ng-repeat="port in [1, 2, 3, 4, 5, 6, 7, 8]" ng-value="labelMap[selectedRelay + port + 'n']">
+        {{ labelMap[selectedRelay + port + 'n'] }}
+    </option>
+</select>
+    <ul ng-if="selectedRelay !== 'default'">
+        <li ng-repeat="log in filteredLogs.slice().reverse() | limitTo: 2000" class="log-item">
+            <strong>{{ log.timestamp | date: 'medium' }}:</strong> {{ log.changeDescription }}
+        </li>
+    </ul>
+</div>    
+    </div>
+  </div>
+         
+  </ons-page>
+</ons-template>    
+    
 <ons-template id="popover.html">
   <ons-popover direction="down" cancelable ng-controller="PopoverController">
     <ons-list>
@@ -2891,6 +3107,42 @@
         </div>
     </ons-dialog>
 </ons-template>
+<ons-template id="caldialog.html">
+    <ons-dialog id="calDialog">
+        <div class="dialog-content" style="text-align:center;">
+            <p class="rflabel">{{calibrationData.calParameter}} Calibration</p>
+            <div>
+                <p>{{calibrationData.stepInstruction}}</p> 
+            </div>
+          <label ng-show="showCal1" class="cal-label">Value 1: <span class="bold-value">{{calValue1}}</span></label>
+            
+            <label ng-show="showCal2" class="cal-label">Value 2: <span class="bold-value">{{calValue2}}</span></label>
+                <div ng-show="finish">
+                <label>Add Calibration event to Calendar</label>
+                <input type="checkbox" ng-model="calibrationData.addToCalendar">
+                </div>    
+            <div>
+                <button class="button button--cta" ng-click="proceedToNextStep()" ng-disabled="calibrationData.isButtonDisabled">{{calibrationData.ButtonLabel}}</button>
+                 <button class="button button--cta button--cancel" ng-click="cancel()">Cancel</button>
+            </div>
+        </div>
+    </ons-dialog>
+</ons-template>
+<ons-template id="confirm.html">
+<ons-dialog id="confirmDialog" cancelable  class="event-details-dialog">
+  <div class="dialog-content">
+  <p class="event-title">Reboot</p>
+      <p class="event-description">Are you sure you want to reboot?</p>
+      <div class="button-row">
+        <ons-button modifier="quiet" ng-click="rebootCancel()" class="cancel-button">Cancel</ons-button>
+        <ons-button modifier="quiet" ng-click="reboot()" class="reboot-button">Reboot</ons-button>
+      </div>
+  </div>
+</ons-dialog>
+</ons-template>
+    
+    
+ 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var themeToggle = document.getElementById('theme-toggle');
@@ -2924,6 +3176,8 @@ function enableDarkTheme() {
     script.src = 'js/dark-unica.js';
     script.classList.add('dark-theme-script'); // Add a class to identify the script
     document.body.appendChild(script);
+        // Update the theme color meta tag
+    updateThemeColor('#121212'); // Dark theme color
 }
 
 function disableDarkTheme() {
@@ -2935,6 +3189,7 @@ function disableDarkTheme() {
     if (script) {
         document.body.removeChild(script);
     }
+    updateThemeColor('#EEF3F5'); // Light theme color
 }
 
 function createDarkThemeLink() {
@@ -2945,6 +3200,19 @@ function createDarkThemeLink() {
     document.head.appendChild(link);
     return link;
 }
+function updateThemeColor(color) {
+    var metaThemeColor = document.querySelector("meta[name=theme-color]");
+    if (metaThemeColor) {
+        metaThemeColor.setAttribute("content", color);
+    } else {
+        // Meta tag not found, create a new one
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.setAttribute('name', 'theme-color');
+        metaThemeColor.setAttribute('content', color);
+        document.head.appendChild(metaThemeColor);
+    }
+}    
+    
 </script>
 <script>
 
@@ -2991,19 +3259,140 @@ function showAddToHomeScreenButton() {
     }
 }
 </script>
+
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('js/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered:', registration);
-                })
-                .catch(error => {
-                    console.error('Service Worker registration failed:', error);
-                });
-        });
+// Step 1: Register the service worker
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+                // Check for authentication and VAPID public key before subscribing
+                initiatePushSubscription();
+            })
+            .catch(err => {
+                console.error('Service Worker registration failed:', err);
+            });
+    });
+}
+
+
+    async function initiatePushSubscription() {
+    // Wait until the user is authenticated and VAPID public key is available
+    const isAuthenticated = await waitForUserAuthentication();
+    const vapidPublicKey = localStorage.getItem('ngStorage-vapidPublicKey').replace(/"/g, ''); 
+       
+    if (isAuthenticated && vapidPublicKey) {
+        const registration = await navigator.serviceWorker.ready;
+        await askForNotificationPermission(registration, vapidPublicKey);
     }
+    
+}
+
+async function waitForUserAuthentication() {
+    return new Promise(resolve => {
+        const checkAuth = () => {
+            const isAuthenticated = localStorage.getItem('ngStorage-isAuthenticated');
+            if (isAuthenticated === 'true') {
+                resolve(true);
+            } else {
+                setTimeout(checkAuth, 30000); // Retry every 30 seconds
+            }
+        };
+        checkAuth();
+    });
+}
+
+function askForNotificationPermission(registration, vapidPublicKey) {
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          //  console.log('Notification permission granted.');
+            subscribeUserToPush(registration, vapidPublicKey);
+        } else {
+            console.error('Notification permission denied.');
+        }
+    });
+}
+
+async function subscribeUserToPush(registration, vapidPublicKey) {
+    // The vapidPublicKey parameter is now directly passed to avoid redundant local storage access.
+    const convertedVapidKey = urlB64ToUint8Array(vapidPublicKey);
+    try {
+        const subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            const newSubscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedVapidKey
+            });
+           // console.log('User is subscribed to push notifications:', newSubscription);
+            // Send subscription details to server
+            sendSubscriptionToServer(newSubscription);
+        } 
+    } catch (err) {
+        console.error('Failed to subscribe the user:', err);
+    }
+}
+
+// Utility function to convert VAPID public key from URL-safe base64 string to Uint8Array
+function urlB64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+// Function to send subscription details to the server
+function sendSubscriptionToServer(subscription) {
+    // Retrieve and parse the controllers array from local storage
+var controllers = JSON.parse(localStorage.getItem('ngStorage-controllers')); // Parse the JSON data
+var activeControllerId = localStorage.getItem('ngStorage-activecontrollerid');
+
+// Check if the controllers array exists and has at least one item
+if (controllers && controllers.length > 0 && activeControllerId !== null) {
+    // Assuming that activeControllerId is a valid index
+    var selectedController = controllers[activeControllerId];
+
+    // Check if 'cloudusername' exists, and if not, use 'username'
+    var idToSend = selectedController.cloudusername || selectedController.username;
+};
+    
+    if (!idToSend) {
+        console.error('No ID to send. Subscription not sent to server.');
+        return;
+    }
+   
+    fetch('/ra/push-subscribe', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            reefangelid: idToSend,
+            subscription: subscription
+        }),
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('Failed to send subscription to server.');
+        }
+        return response.json();
+    })
+    .then(function(responseData) {
+       // console.log('Server accepted the push subscription with ID:', idToSend, responseData);
+    })
+    .catch(function(error) {
+        console.error('Error during subscription process for ID:', idToSend, error);
+    });
+}
+
 </script>
 
-      </body>
 
+
+
+      </body>
+</html>

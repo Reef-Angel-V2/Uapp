@@ -1,15 +1,166 @@
 {
   "name": "Reef Angel Controller User App",
-  "short_name": "Uapp",
+  "short_name": "Reef Angel Uapp",
+  "id":"RA-Uapp",
   "icons": [
+
     {
-      "src": "RAIcon.png",
+      "src": "AppImages/windows11/StoreLogo.scale-400.png",
+      "sizes": "200x200",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+
+    {
+      "src": "AppImages/windows11/Square44x44Logo.targetsize-256.png",
       "sizes": "256x256",
-      "type": "image/png"
-    }
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"            
+    },
+    {
+      "src": "AppImages/windows11/Square44x44Logo.altform-lightunplated_targetsize-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/android/android-launchericon-512-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/android/android-launchericon-192-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+
+    {
+      "src": "AppImages/ios/128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"       
+    },
+    {
+      "src": "AppImages/ios/152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/ios/180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/ios/192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/ios/256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "maskable"        
+    },
+    {
+      "src": "AppImages/ios/512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"  
+    },
+    {
+      "src": "AppImages/ios/1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"    
+    } 
+      
   ],
-  "start_url": "/uappdev",
+  "shortcuts": [
+{
+  "name": "Feeding Mode",
+  "description": "Activate Feeding Mode",
+  "url": "/uapp/#feeding",
+  "icons": [
+      {
+        "src": "images/shortcuts/feeding.png",
+        "sizes": "96x96",
+        "type": "image/png",
+        "purpose": "any"
+      }
+         ]
+},
+{
+  "name": "Water Change Mode",
+  "description": "Activate Water Change Mode",
+  "url": "/uapp/#water-change",
+    "icons": [
+      {
+        "src": "images/shortcuts/waterchangemode.png",
+        "type": "image/png",
+        "sizes": "96x96",
+        "purpose": "any"
+      }
+         ]
+},
+{
+  "name": "Exit Mode",
+  "description": "Activate Exit Mode",
+  "url": "/uapp/#exit",
+    "icons": [
+      {
+        "src": "images/shortcuts/exitmode.png",
+        "type": "image/png",
+        "sizes": "96x96",
+        "purpose": "any"
+      }
+         ]
+},
+{
+  "name": "Lights On",
+  "description": "Activate Lights On",
+  "url": "/uapp/#lights-on",
+  "icons": [
+      {
+        "src": "images/shortcuts/lightson.png",
+        "type": "image/png",
+        "sizes": "96x96",
+        "purpose": "any"
+      }
+         ]
+},
+{
+  "name": "Lights Cancel",
+  "description": "Activate Lights Cancel",
+  "url": "/uapp/#lights-cancel",
+  "icons": [
+      {
+        "src": "images/shortcuts/lightscancel.png",
+        "type": "image/png",
+        "sizes": "96x96",
+        "purpose": "any"
+      }
+         ]
+}
+  ],
+  "start_url": "https://forum.reefangel.com/uapp",
   "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff"
+  "theme_color": "#e9eef0",
+  "background_color": "#fafafa",
+  "description": "The Reef Angel Uapp is your digital gateway to the Reef Angel Controller, offering a user-friendly interface for managing your aquatic environment. Get alerts, control settings remotely, and enjoy seamless integration with Android, Apple devices, and web browsers. Monitor and adjust your controller's parameters with ease, anytime, anywhere.",
+  "dir": "auto",
+  "scope": "https://forum.reefangel.com/uapp",
+  "lang": "en",
+  "orientation": "any",
+  "version": "3.0.2"
 }
