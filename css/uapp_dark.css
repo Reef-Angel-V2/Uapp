@@ -174,7 +174,9 @@ background-color: #1a1a1a;
 	float: left;
 	width:33%;
 }
-
+.button--cta{
+background-color: #1867c2cf; 
+}
 .button-bar__button, .button-bar__button:active,
 :active + .button-bar__button {
 	height: 36px;
@@ -182,6 +184,21 @@ background-color: #1a1a1a;
 	font-size: 14px;
 	background-color: #242424;
     color: #ffffff; /* Sets the color to white */
+}
+.button-bar__button {
+border-top: 1px solid #0070f1;
+border-bottom: 1px solid #0070f1;
+}
+.button-bar__item:first-child > .button-bar__button {
+border-left: 1px solid #0070f1;
+border-top-left-radius:10px;
+border-bottom-left-radius: 10px;    
+    
+}
+.button-bar__item:last-child > .button-bar__button {
+border-right: 1px solid #0070f1;
+border-top-right-radius: 10px;
+border-bottom-right-radius: 10px;
 }
 
 #alert {
@@ -267,7 +284,7 @@ background-color: #1a1a1a;
 }
 
 .controllerlistitem{
-	color:#990000;
+	color:#dd1414;
 	font-weight:bold;
     background-color:#2e2e2e;
 }
@@ -319,7 +336,7 @@ background-color: #1a1a1a;
 }
 
 .graphlist{
-	width: 30%;
+	width: 50%;
 	padding: 10px;
 	text-align:left;
  
@@ -396,7 +413,7 @@ background-color: #1a1a1a;
 {
 	font-size:1.2em;
 	font-weight:bold;
-	color:#990000;
+	color:#d99d0e;
 	margin-top: 15px;
 	margin-bottom: 5px;
 	text-align:center;
@@ -435,7 +452,7 @@ table{
 
 th, td{
   text-align: center;
-  padding: 5px;
+  padding: 2px;
   border: 1px solid white;
 }
 
@@ -486,6 +503,7 @@ th{
     color:white;
     border: 1px solid #ddd;
 }
+
 .tab-content {
   margin-top: 20px;
 }
@@ -729,6 +747,95 @@ input[type="checkbox"] {
 .delete-button {
   margin: 0 8px;
 }
+.calibrate-button {
+  width: 100%; /* Make the button full width */
+  margin-top: 5px; /* Add some top margin */
+  background-color: #1963b7;
+}
+.standard-list-item {
+
+  border: 3px solid #1963b7!important; 
+  text-align: center;
+  border-radius: 8px;
+    margin:5px;
+    
+}
+
+.calibratelist{
+    background-color:#2e2e2e;
+    border-bottom: none;
+    border-top:none;
+    
+}
+.navigation-bar__title {
+   color:white; 
+}
+.button--large--cta {
+    background-color:#1963b7;
+}
+#calDialog .dialog{
+background-color: #333; /* Dark background */
+color: #fff; /* Light text */
+}
+.status{
+color:#a4acb7;    
+}
+.toolbar-button{
+color:#4cabff;    
+}
+#confirmDialog .dialog {
+        background-color: #333; /* Dark background */
+        color: #fff; /* Light text */
+    }
+.cancel-button{
+color: #4cabff;  
+}
+select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #333; /* Darker border color */
+    border-radius: 4px;
+    background-color: #333; /* Darker background for select */
+    color: #fff; /* White text color */
+    box-shadow: inset 0 1px 3px rgba(255,255,255,0.1); /* Light inner shadow for depth */
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+select:hover {
+    border-color: #555; /* Slightly lighter border on hover */
+}
+
+select:focus {
+    outline: none;
+    border-color: #1a73e8; /* Brighter blue for focus */
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.25); /* Blue glow */
+}
+
+.log-item {
+    background-color: #1e1e1e; /* Darker background for even items */
+    border: 1px solid #333; /* Dark border for all items */
+    padding: 5px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(255,255,255,0.1); /* Subtle white shadow for depth */
+}
+
+.log-item:nth-child(odd) {
+    background-color: #101010; /* Slightly different dark background for odd items */
+}
+
+
+
+.tab-content {
+    background: #333; /* Dark background for tab content */
+    padding: 10px;
+    border: 1px solid #444; /* Darker border */
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Deeper shadow for depth */
+    margin-top: 20px;
+}
+
+
 @media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
 h4{
 	font-size:.8em;        
@@ -880,7 +987,7 @@ ons-list-item {
 {
 	font-size: .8em;
 	font-weight:bold;
-	color:#990000;
+	color:#d99d0e;
 	margin-top: 15px;
 	margin-bottom: 5px;
 	text-align:center;
@@ -941,5 +1048,9 @@ table th, table td {
     .uvarvalue {
         font-size: .8em; /* Adjust font size for smaller screens */
     }
+    
+    .list__item:not(:last-child) {
+    background-size: 100% 0px;
+}
 }
 

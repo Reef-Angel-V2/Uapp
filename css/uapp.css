@@ -10,7 +10,9 @@ ons-list-item > ons-icon {
   font-size: 20px;
   opacity: 0.3;
 }
-
+.toolbar-button{
+    color:#007ef6;
+}
 
 .list-item-action > ons-icon {
   margin-top: 14px;
@@ -23,11 +25,11 @@ ons-list-item > ons-icon {
 }
 
 .page__background{
-background-color: #fff;
+background-color: #fafafa;
 }
 
 .navigation-bar{
-background-color: #fafafa;
+background-color: #e9eef0;
 }
 
 .paramslabel{
@@ -142,13 +144,36 @@ background-color: #fafafa;
 	float: left;
 	width:33%;
 }
-
+.custom-margin {
+    margin: 5px; /* Adjust the margin value as needed */
+}
+.reboot-button{
+color: red;
+}
+.delete-button{
+  color: red;  
+}
 .button-bar__button, .button-bar__button:active,
 :active + .button-bar__button {
 	height: 36px;
 	line-height: 36px;
 	font-size: 14px;
 	background-color: #E9EEF0;
+}
+.button-bar__button {
+border-top: 1px solid #0070f1;
+border-bottom: 1px solid #0070f1;
+}
+.button-bar__item:first-child > .button-bar__button {
+border-left: 1px solid #0070f1;
+border-top-left-radius:10px;
+border-bottom-left-radius: 10px;    
+    
+}
+.button-bar__item:last-child > .button-bar__button {
+border-right: 1px solid #0070f1;
+border-top-right-radius: 10px;
+border-bottom-right-radius: 10px;
 }
 
 #alert {
@@ -234,7 +259,7 @@ background-color: #fafafa;
 }
 
 .controllerlistitem{
-	color:#930;
+	color:#b33c00;
 	font-weight:bold;
 }
 
@@ -284,7 +309,7 @@ background-color: #fafafa;
 }
 
 .graphlist{
-	width: 30%;
+	width: 50%;
 	padding: 10px;
 	text-align:left;
 }
@@ -392,7 +417,7 @@ table{
 
 th, td{
   text-align: center;
-  padding: 5px;
+  padding: 2px;
   border: 1px solid #ccc;
 }
 
@@ -424,7 +449,6 @@ th{
     padding: 10px;
      background-color: transparent;
 }
-
 .alertlist {
   width: 95%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a box-shadow */
@@ -603,6 +627,109 @@ th{
 .delete-button {
   margin: 0 8px;
 }
+/* Style for standard calibrations list items */
+.standard-list-item {
+  color: black; /* Text color */
+  border: 3px solid #25a6d9 !important; 
+  text-align: center;
+  background-color: #e9eef0;
+  border-radius: 8px;
+    margin:5px;
+}
+
+#calDialog .dialog {
+    width: 90%; /* Provides a base width for smaller screens, adjust as needed */
+    max-width: 400px; /* Prevents the dialog from becoming too wide on larger screens */
+    overflow-wrap: break-word; /* Ensures text goes to a new line */
+}
+
+#calDialog .dialog-content {
+    max-height: 300px; /* Adjust based on your needs */
+    margin: 10px; /* Consistent spacing around content */
+    word-wrap: break-word; /* Ensures long words do not extend outside their container */
+}
+
+/* Ensure text elements within dialog content wrap text correctly */
+#calDialog .dialog-content p {
+    word-wrap: break-word;
+}
+
+/* Styling for buttons within the dialog */
+#calDialog .button {
+    margin-top: 20px; /* Adds space at the top of the button */
+    width: auto; /* Adjusts button width according to its content */
+    margin-right: 10px; /* Adds spacing between buttons */
+}
+
+#calDialog .button--cancel {
+    background-color: red; /* Change as needed */
+    color: white; /* Ensures text is readable on red background */
+    font-weight: bold; /* Optional: makes the text bold */
+}
+.cal-label {
+    display: block; /* This ensures each label is on its own line */
+    margin-bottom: 10px; /* Adds some space below each label for better readability */
+}
+
+.bold-value {
+    font-weight: bold; /* Makes the content of <span> bold */
+}
+#eventDetailsDialog .dialog-content{
+    margin:10px;
+}
+.status{
+color:#655454;    
+}
+
+.icon-touch {
+  font-size: 24px; /* Increase icon size */
+  margin: 5px; /* Add space around icons */
+}
+.description-input{
+    height: 42px;
+}
+select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+select:hover {
+    border-color: #888;
+}
+
+select:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 5px rgba(0, 86, 179, 0.25);
+}
+.log-item {
+    background-color: #f9f9f9; /* Light gray background for even items */
+    border: 1px solid #ddd; /* Light gray border for all items */
+    padding: 5px;
+    margin-bottom: 5px;
+    border-radius: 4px; /* Optional: rounded corners */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: slight shadow for depth */
+}
+
+.log-item:nth-child(odd) {
+    background-color: #ffffff; /* White background for odd items */
+}
+
+.tab-content {
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-top: 20px;
+}
+
+
 
 @media only screen and (max-width: 480px), only screen and (max-device-width: 480px) {
 h4{
