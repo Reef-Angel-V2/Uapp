@@ -28,6 +28,7 @@ var internalmemoryscope;
 var localserver;
 var reconnectAttempts = 0;
 var maxReconnectAttempts = 4;
+var attempts = 0;
 
 
 
@@ -38,11 +39,10 @@ var dimmingchannels = ["Daylight Channel", "Actinic Channel", "Dimming Channel 0
 var customvars = ["Custom Var 0", "Custom Var 1", "Custom Var 2", "Custom Var 3", "Custom Var 4", "Custom Var 5", "Custom Var 6", "Custom Var 7"];
 var pwmchannels = ["PWMD", "PWMA", "PWME0", "PWME1", "PWME2", "PWME3", "PWME4", "PWME5", "AIW", "AIRB", "AIB", "RFW", "RFRB", "RFR", "RFG", "RFB", "RFI", "PWMD2", "PWMA2"];
 
-var app = angular.module('uapp', ['onsen','ngStorage', 'ngAnimate']);
+var app = angular.module('uapp', ['onsen', 'ngStorage', 'ngAnimate']);
 
 
-
-app.controller('DropdownController', function ($rootScope, $scope, $http, $localStorage, $timeout) {
+app.controller('DropdownController', function ($rootScope, $scope, $http, $localStorage, $timeout, $window) {
 	$scope.rfmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"}];
 	$scope.dcmodes = [{"name":"Constant","color":"#00682e","id":"0"},{"name":"Lagoon","color":"#ffee00","id":"1"},{"name":"Reef Crest","color":"#ffee00","id":"2"},{"name":"Short Pulse","color":"#16365e","id":"3"},{"name":"Long Pulse","color":"#d99593","id":"4"},{"name":"Nutrient Transport","color":"#eb70ff","id":"5"},{"name":"Tidal Swell","color":"#eb70ff","id":"6"},{"name":"Feeding","color":"#F5C127","id":"7"},{"name":"Night","color":"#90C3D4","id":"9"},{"name":"Storm","color":"black","id":"10"},{"name":"Custom","color":"#72BD4D","id":"11"},{"name":"Else","color":"#B28DC4","id":"12"},{"name":"Sine","color":"#47ADAC","id":"13"},{"name":"Gyre","color":"#768C8C","id":"14"}];
 	$scope.$storage = $localStorage;
@@ -104,7 +104,7 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
 	}
 
 	$scope.showforumid=function(){
-		ons.notification.alert({message: 'Forum username: ' + parametersscope.forumid, title: 'Reef Angel Controller'});
+		ons.notification.alert({message:'Forum username: ' + parametersscope.forumid, title: 'Reef Angel Controller'});
 	}
 
 	$scope.getcontrollerdata=function(cmd) {
@@ -122,25 +122,51 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
 		getcontrollerdatahttp(cmd);
 	}
 
-	getcontrollerdatahttp=function(cmd) {
-		modal.show();
-		var tempurl;
+function getcontrollerdatahttp(cmd) {
+    modal.show(); // Show modal at the start of the function
 
-		if (localserver)
-			tempurl=document.referrer.replace("wifi","") + cmd;
-		else
-			tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
-		var request=$http({
-			method:"GET",
-			url: tempurl,
-			timeout: 3000
-		});
-		request.success(function(data){
-         
-			attempts=0;
-			console.log(data);
-			modal.hide();
-			if (cmd.substring(0,1)=='r')
+    if (!$localStorage.controllers || !$localStorage.controllers[$localStorage.activecontrollerid]) {
+        console.error("Controller configuration not found.");
+        modal.hide();
+        return;
+    }
+
+    const controller = $localStorage.controllers[$localStorage.activecontrollerid];
+    const userIp = controller.ipaddress;
+    const port = controller.port;
+    var tempurl;
+
+    if (localserver) {
+        tempurl = document.referrer.replace("wifi", "") + cmd;
+    } else if (/^(192\.168|10\.|172\.(1[6-9]|2[0-9]|3[0-1]))\./.test(userIp)) {
+        tempurl = "http://" + userIp + ":" + port + "/" + cmd; // Local network IP, direct access
+    } else {
+        tempurl = "https://forum.reefangel.com/px/" + userIp + "/" + port + "/" + cmd; // Non-local IP, use the proxy
+    }
+
+   // console.log("Requesting data from:", tempurl);
+
+    $http.get(tempurl, {timeout: 3000})
+        .then(function(response) {
+            processResponseData(cmd, response.data); // Process all the response data inside this function
+        })
+        .catch(function(error) {
+ //           console.error("Error fetching data:", error);
+            if (attempts < 3) {
+                attempts++;
+                getcontrollerdatahttp(cmd); // Retry logic
+            } else {
+                ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
+                attempts = 0; // Reset attempts after retries are exhausted
+            }
+        })
+        .finally(() => {
+            modal.hide(); // Ensure modal is hidden regardless of request outcome
+        });
+}
+
+function processResponseData(cmd, data) {
+   if (cmd.substring(0,1)=='r')
 			{
 				var x2js = new X2JS();
 				json = x2js.xml_str2json( data );
@@ -148,7 +174,7 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
 				$localStorage.json=json;
 				$localStorage.jsonarray[$localStorage.activecontrollerid]=json;
 				$rootScope.$broadcast('msg', 'update');
-				console.log(statusindex);
+				//console.log(statusindex);
 				if (statusindex==3) tabbar.loadPage('dimming.html');
 				if (statusindex==5) tabbar.loadPage('rf.html');
 				if (statusindex==7) tabbar.loadPage('dimmingoverride.html');
@@ -218,23 +244,9 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
 				var dateTime = new Date(jsonDateTime.D.YR, jsonDateTime.D.MON - 1, jsonDateTime.D.DAY, jsonDateTime.D.HR, jsonDateTime.D.MIN).toLocaleString();
 				ons.notification.alert({message: 'Controller time: ' + dateTime, title: 'Reef Angel Controller'});
 			}
-		});
-		request.error(function(){
-			modal.hide();
-         
-			if (attempts < 1)
-			{
-				attempts++;
-				console.log('Unable to process controller data! Retry: ' + attempts);
-				$scope.getcontrollerdata(cmd);
-			}
-			else
-			{
-				attempts=0;
-				ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
-			}
-		});
-	}
+    }
+
+
 
 	getcontrollerdatacloud=function(cmd) {
 		message=null;
@@ -304,6 +316,7 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
 			case "d":
 				message = new Paho.MQTT.Message("date:0");
 				break;
+             
 		}
 		if (cmd != 'd' && cmd.substring(0,1)=='d')
 			message = new Paho.MQTT.Message("date:1:"+cmd.substring(1,13).split(",").join(""));
@@ -377,41 +390,36 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
 		UpdateParams($scope, $timeout, $localStorage);
 	}
 
-	$scope.getportallabels = function() {
-
+$scope.getportallabels = function() {
     var activeControllerId = $localStorage.activecontrollerid;
-    
 
     // Check if we have controllers and an active controller ID
     if ($localStorage.controllers && activeControllerId != null && $localStorage.controllers.length > activeControllerId) {
-    var controller = $localStorage.controllers[activeControllerId];
-    // Check for 'cloudusername' first; if it doesn't exist, use 'username'
-    var username = controller.cloudusername || controller.username;
-}    else {
-
+        var controller = $localStorage.controllers[activeControllerId];
+        // Check for 'cloudusername' first; if it doesn't exist, use 'username'
+        var username = controller.cloudusername || controller.username;
+    } else {
         ons.notification.alert({message: 'Please login for this feature!', title: 'Reef Angel Controller'});
         return; // Exit if no username is found or active controller ID is not set
     }
-        
+    
     var url = "https://forum.reefangel.com/labels/" + username; // Adjusted URL
-    var request = $http({
-        method: "GET",
-        url: url,
-        timeout: 3000
-    });
-    request.success(function(data) {
-        attempts = 0;
-        modal.hide();
-        var x2js = new X2JS();
-        var jsonlabels = x2js.xml_str2json(data);
-        $localStorage.jsonlabels = jsonlabels;
-        if (typeof $localStorage.jsonlabelsarray === 'undefined') {
-        $localStorage.jsonlabelsarray = {};
-}
-        $localStorage.jsonlabelsarray[activeControllerId] = jsonlabels; 
-        $rootScope.$broadcast('msg', 'labels');
-    });
-        request.error(function() {
+    $http.get(url, {timeout: 3000})
+        .then(function(response) {
+            // Success handler
+            attempts = 0;
+            modal.hide();
+            var x2js = new X2JS();
+            var jsonlabels = x2js.xml_str2json(response.data); // Note the change to response.data
+            $localStorage.jsonlabels = jsonlabels;
+            if (typeof $localStorage.jsonlabelsarray === 'undefined') {
+                $localStorage.jsonlabelsarray = {};
+            }
+            $localStorage.jsonlabelsarray[activeControllerId] = jsonlabels; 
+            $rootScope.$broadcast('msg', 'labels');
+        })
+        .catch(function() {
+            // Error handler
             modal.hide();
             if (attempts < 1) {
                 attempts++;
@@ -421,17 +429,136 @@ app.controller('DropdownController', function ($rootScope, $scope, $http, $local
                 ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
             }
         });
+};
+
+
+$scope.changerelay = function(id, mode) {
+  //  console.log("Received command with ID:", id, "and Mode:", mode);
+
+    var relayId, portId;
+
+    if (id < 10) {
+        // It's a single digit, which means it's a port on the main relay
+        relayId = '';  // Assuming main relay has no number in your setup, just 'R'
+        portId = id;   // The single digit itself is the portId
+    } else {
+        // Two digits or more, interpret the first digit(s) as relay and the last as port
+        relayId = Math.floor(id / 10);  // Extract relay ID from the number
+        portId = id % 10;              // Extract port ID from the number
     }
 
-	$scope.changerelay=function(id,mode){
-		$scope.getcontrollerdata('r' + id + mode);
-	}
+   //console.log(`Parsed relayId: 'R'${relayId}, portId: ${portId}, mode: ${mode}`);
+
+    // Constructing base keys for 'On' and 'Off' states
+    var baseKeyOn = 'RON' + (relayId ? relayId : '');
+    var baseKeyOff = 'ROFF' + (relayId ? relayId : '');
+
+    // Calculate bitmask for the specific port
+    var mask = (portId > 0 ? (1 << (portId - 1)) : 0xFFFF); // Adjusting mask for specific port
+
+    // Fetch and log the current state from JSON for both 'On' and 'Off'
+    var currentValueOn = parseInt(json.RA[baseKeyOn] || "0", 10);
+    var currentValueOff = parseInt(json.RA[baseKeyOff] || "0", 10);
+
+
+
+    // Determine the action based on the mode
+    if (mode === 0) { // Off mode
+        if ((currentValueOff & mask) === 0) {
+           // console.log("The port is already Off.");
+            ons.notification.alert({
+                message: `Port ${portId} is already in Off.`,
+                title: 'Reef Angel Alert'
+            });
+        } else {
+            //console.log("Port is not in Off mode, changing state...");
+            $scope.getcontrollerdata('r' + id + mode);
+        }
+    } else if (mode === 1) { // On mode
+        if ((currentValueOn & mask) !== 0) {
+           // console.log("The relay is already in 'On' mode.");
+            ons.notification.alert({
+                message: `Port ${portId} is already On mode.`,
+                title: 'Reef Angel Alert'
+            });
+        } else {
+           // console.log("Port is not in 'On' mode, changing state...");
+            $scope.getcontrollerdata('r' + id + mode);
+        }
+    } else if (mode === 2) { // Auto mode
+        if ((currentValueOn & mask) === 0 && (currentValueOff & mask) !== 0) {
+           // console.log("The relay is already in 'Auto' mode.");
+            ons.notification.alert({
+                message: `Port ${portId} is already in Auto mode.`,
+                title: 'Reef Angel Alert'
+            });
+        } else {
+            //console.log("Port is not in 'Auto' mode, changing state...");
+            $scope.getcontrollerdata('r' + id + mode);
+        }
+    } else {
+       
+    }
+};
+
+    //activiating modes for app shortcuts
+function activateModeFromHash() {
+    var hash = $window.location.hash;
+    if (hash) {
+        hash = hash.substring(1); // Remove the "#" from the hash fragment
+        switch (hash) {
+            case 'feeding':
+                $scope.getcontrollerdata('mf');
+                break;
+            case 'water-change':
+                $scope.getcontrollerdata('mw');
+                break;
+            case 'exit':
+                $scope.getcontrollerdata('bp');
+                break;
+            case 'lights-on':
+                $scope.getcontrollerdata('l1');
+                break;
+            case 'lights-cancel':
+                $scope.getcontrollerdata('l0');
+                break;
+            // Add more cases for other modes as needed
+            default:
+                // Handle default case or unsupported modes
+                break;
+        }
+        history.pushState("", document.title, window.location.pathname + window.location.search); // Clear the hash
+    }
+}
+
+$timeout(function() { activateModeFromHash(); }, 3000);
+
+$rootScope.$on('$locationChangeSuccess', function () {
+    activateModeFromHash();
+});
+    
+    $scope.showConfirmDialog=function()
+    {
+    ons.createDialog('confirm.html', { parentScope: $scope }).then(function(dialog) {
+    $scope.dialog = dialog;
+    dialog.show();
+        });
+    }
+    $scope.reboot=function(){
+        $scope.getcontrollerdata('boot');
+        $scope.dialog.hide();
+    }
+    $scope.rebootCancel=function(){
+        $scope.dialog.hide();
+    }
+    
 });
 
-
-	
-
 app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorage) {
+    
+
+    
+    
 	$scope.$storage = $localStorage;
 	parametersscope=$scope;
 	currentstorage=$localStorage;
@@ -564,22 +691,91 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
 		if (statusindex==6) tabbar.loadPage('dcpump.html');
 	}
 
-	$scope.setoverride=function(){
-		if (channeloverride<8 || channeloverride==17 || channeloverride==18)
-			statusindex=3;
-		else if (channeloverride>10 && channeloverride<17)
-			statusindex=5;
-		$scope.getcontrollerdata('po'+channeloverride+','+$scope.dimmingoverridechange);
-	}
+$scope.setoverride = function() {
+    var channelMap = {
+        0: 'PWMD',
+        1: 'PWMA',
+        17: 'PWMD2',
+        18: 'PWMA2',
+        2: 'PWME0',
+        3: 'PWME1',
+        4: 'PWME2',
+        5: 'PWME3',
+        6: 'PWME4',
+        7: 'PWME5',
+        11: 'RFW',
+        12: 'RFRB',
+        13: 'RFR',
+        14: 'RFG',
+        15: 'RFB',
+        16: 'RFI'
+    };
 
-	$scope.canceloverride=function(){
-		if (channeloverride<8 || channeloverride==17 || channeloverride==18)
-			statusindex=3;
-		else if (channeloverride>10 && channeloverride<17)
-			statusindex=5;
-		$scope.getcontrollerdata('po'+channeloverride+',255');
-	}
+    var channelKey = channelMap[channeloverride]; // Get the corresponding channel key
+    var storageData = JSON.parse(localStorage.getItem('ngStorage-json')); // Retrieve and parse the stored JSON object
+    var currentOverrideValue = storageData.RA[channelKey + 'O']; // Access the current override value
 
+    //console.log(channelKey + 'O', currentOverrideValue, $scope.dimmingoverridechange); // Debugging to check values being compared
+
+    // Convert both values to integers to ensure correct comparison
+    if (parseInt(currentOverrideValue) !== parseInt($scope.dimmingoverridechange)) {
+        // Only send the override command if the current value is different from the new value
+        $scope.getcontrollerdata('po' + channeloverride + ',' + $scope.dimmingoverridechange);
+
+        if (channeloverride < 8 || channeloverride == 17 || channeloverride == 18) {
+            statusindex = 3;
+        } else if (channeloverride > 10 && channeloverride < 17) {
+            statusindex = 5;
+        }
+    } else {
+        // Optionally, log or alert that the new value is the same as the current value
+          ons.notification.alert({
+        message: `Override value is already set at ${currentOverrideValue}!`, // Use template literal for variable interpolation
+        title: 'Reef Angel Controller'
+    });
+    }
+};
+
+$scope.canceloverride = function() {
+    var channelMap = {
+        0: 'PWMD',
+        1: 'PWMA',
+        17: 'PWMD2',
+        18: 'PWMA2',
+        2: 'PWME0',
+        3: 'PWME1',
+        4: 'PWME2',
+        5: 'PWME3',
+        6: 'PWME4',
+        7: 'PWME5',
+        11: 'RFW',
+        12: 'RFRB',
+        13: 'RFR',
+        14: 'RFG',
+        15: 'RFB',
+        16: 'RFI'
+    };
+
+    var channelKey = channelMap[channeloverride]; // Get the corresponding channel key
+    var storageData = JSON.parse(localStorage.getItem('ngStorage-json')); // Retrieve and parse the stored JSON object
+    var overrideValue = storageData.RA[channelKey + 'O']; // Access the override value using the constructed key
+
+    // Check if the override value is not 255
+    if (parseInt(overrideValue) !== 255) {
+        // Only send the cancellation command if the current override is not 255
+        $scope.getcontrollerdata('po' + channeloverride + ',255');
+
+        if (channeloverride < 8 || channeloverride == 17 || channeloverride == 18) {
+            statusindex = 3;
+        } else if (channeloverride > 10 && channeloverride < 17) {
+            statusindex = 5;
+        }
+    } else {
+        // Optionally, log or alert that there is no override to cancel
+        ons.notification.alert({message: 'No active override to cancel!', title: 'Reef Angel Controller'});
+        
+    }
+};
 	$scope.cvarupdate=function(channel){
 		tabbar.loadPage('cvarupdate.html');
 		cvarupdateindex=channel;
@@ -694,8 +890,9 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
                 wl4: true,
                 hum: true,
                 par: true,
-                c02: true,
+                co2: true,
                 ozo: true,
+                co2hum: true,
                 // IO
                 atohigh: true,
                 atolow: true,
@@ -731,8 +928,54 @@ app.controller('Parameters', function($rootScope, $scope, $timeout, $localStorag
                 uv8: false
             };
         }
+
     
+});
+app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
+	$scope.$storage = $localStorage;
+	relayscope=$scope;
+	statusindex=0;
+	$scope.$on('msg', function(event, msg) {
+		//console.log('Relay'+msg);
+		if (msg=="update")
+		{
+			json.RA.lastrefresh=new Date().toLocaleString();
+			UpdateParams($scope,$timeout,$localStorage);
+		}
+		if (msg=="paramsok")
+		{
+			UpdateParams($scope,$timeout,$localStorage);
+		}
+	});
+$scope.invokegraph = function(n) {
+    var relayId = 'r'; // Default to main relay box
+
+    if (n !== undefined && n !== '') {
+        relayId += n; // Append n only if it's provided and not an empty string
+    }
     
+   // console.log("invokegraph called with id:", relayId);
+    names = [];
+    names.push(relayId);
+
+    tabbar.loadPage("singlegraph.html");
+    
+    // Use $timeout to delay the execution of CreateChart
+    $timeout(function() {
+        createRelayChart($scope, "paramscontainer", relayId);
+    }, 500); // Adjust the delay time as needed
+};
+
+	$scope.loadmaintab=function(){
+	//	console.log("main relay box");
+	}
+
+	$scope.loadexp1tab=function(){
+		$localStorage.exp1tab=true;
+//		console.log("exp1 relay box");
+	}
+
+	UpdateParams($scope,$timeout,$localStorage);
 });
 
 app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage, $http)  {
@@ -769,52 +1012,68 @@ app.controller('Settings', function($rootScope, $scope, $timeout, $localStorage,
         }
     }
 
+
 $scope.saveaddcontroller = function() {
     modal.show();
-    authenticateUser($scope.cloudusername, $scope.cloudpassword, function(success, response) {
-        if (success) {
-            
-            modal.hide();
+    authenticateUser($scope.cloudusername, $scope.cloudpassword).then(function(result) {
+        modal.hide();
+        if (result.success) {
             $scope.isAuthenticated = true;
             $localStorage.isAuthenticated = true;
-            var responseParts = response.data.split(' ');
-            var ipAddress = responseParts[responseParts.length - 1];
-
-            // Check if the IP address is valid (not null, undefined, or an empty string)
-            if (ipAddress && ipAddress !== 'null' && ipAddress !== '') {
-                var controllerData = createControllerData(ipAddress); // Use the retrieved IP address
-                saveControllerDetails(controllerData);
-            } else {
-                  $scope.cloudenabled= false;
-                // Show dialog for manual IP address entry
-                $scope.showIpInputDialog();
-            }
-        } else {
             
-            ons.notification.alert({message: 'Authentication Failed', title: 'Reef Angel Controller'});
+            if(result.response.vapidPublicKey) {
+                $localStorage.vapidPublicKey = result.response.vapidPublicKey;
+            }
+
+            // Capture the token from the response
+             var token = result.response.token;
+
+            // Initialize controllerData with token
+            var controllerData;
+            if ($scope.useCloudLogin) {
+                controllerData = createControllerData("", token);  // Pass an empty string for IP as it's not needed
+            } else {
+                var ipAddress = result.response.ipAddress;
+                if (ipAddress && ipAddress !== 'null' && ipAddress !== '') {
+                    controllerData = createControllerData(ipAddress, token);
+                } else {
+                    $scope.cloudenabled = false;
+                    $scope.showIpInputDialog();
+                    return;  // Exit the function early if there's no IP address
+                }
+            }
+            saveControllerDetails(controllerData);
+        } else {
+       //     console.log('Authentication Failed:', result.response);
+            $scope.message = result.response;
+            ons.notification.alert({message: $scope.message, title: 'Login Failed'});
             $scope.isAuthenticated = false;
             $localStorage.isAuthenticated = false;
         }
+    }).catch(function(error) {
+        console.error('Error during authentication:', error);
         modal.hide();
+        ons.notification.alert({message: 'An error occurred. Please try again.', title: 'Reef Angel Controller'});
     });
 };
 
-    function createControllerData(ipAddress) {
-        var data = {
-            name: $scope.controllername,
-            ipaddress: $scope.controllerip,
-            port: $scope.controllerport
-        };
-         if ($scope.useCloudLogin) {
-            
+function createControllerData(ipAddress, token) {
+    var data = {
+        name: $scope.controllername,
+        port: $scope.controllerport,  
+        token: token  // Store the token in the controller data
+    };
+
+    if ($scope.useCloudLogin) {
         data.cloudusername = $scope.cloudusername;
         data.cloudpassword = $scope.cloudpassword;
     } else {
-        data.username = $scope.cloudusername;
-        data.password = $scope.cloudpassword;
-        data.ipaddress = ipAddress; // Use the passed ipAddress
-        data.port = 2000; // Or other default port
+        data.username = $scope.cloudusername;  // Or some other username if different
+        data.password = $scope.cloudpassword;  // Or some other password if different
+        data.ipaddress = ipAddress;
+        data.port = data.port || 2000;
     }
+
     return data;
 }
 $scope.refreshController = function(index) {
@@ -848,7 +1107,7 @@ $scope.refreshController = function(index) {
 };
 
 
-    function saveControllerDetails(details) {
+function saveControllerDetails(details) {
         if (editcontrollerid == null) {
             $localStorage.controllers.push(details);
         } else {
@@ -858,7 +1117,7 @@ $scope.refreshController = function(index) {
         $scope.isCloudConnection = !!details.cloudusername && !!details.cloudpassword;
     }
 
-    function updateLocalStorageAndReload() {
+function updateLocalStorageAndReload() {
         // Some additional operations related to local storage
         $localStorage.jsonarray.push(null);
         $localStorage.jsonlabelsarray.push(null);
@@ -872,33 +1131,38 @@ $scope.refreshController = function(index) {
         
     }
 
-function authenticateUser(username, password, callback) {
-
-    $http.post('https://forum.reefangel.com/login', {
-        username: username,
-        password: password
-    }).then(function(response) {
-       
-        callback(true, response);
-    }).catch(function(error) {
-      
-        callback(false, null);
-    });
+function authenticateUser(username, password) {
+    return $http.post('https://forum.reefangel.com/login', { username, password })
+        .then(function(response) {
+            // Extract and return the response data specifically
+            // Assume response.data contains the server's response
+            return { success: true, response: response.data };
+        })
+        .catch(function(error) {
+            // In case of error, you might want to return the error response as well, if available
+            let errorResponse = error.data ? error.data : null;
+            return { success: false, response: errorResponse };
+        });
 }
-    
+
 $scope.showIpInputDialog = function() {
     ons.createDialog('ipInput.html', { parentScope: $scope }).then(function(dialog) {
         $scope.dialog = dialog;
         dialog.show();
     });
 };
+    
+$rootScope.enteredIpAddress
 
 $scope.saveEnteredIpAddress = function() {
-    if ($scope.enteredIpAddress) {
+
+    if ($rootScope.enteredIpAddress) {
         var controllerData = createControllerData($scope.enteredIpAddress);
         saveControllerDetails(controllerData);
+        //console.log($rootScope.enteredIpAddress);
         $scope.dialog.hide();
     } else {
+       
         ons.notification.alert({ message: 'Please enter a valid IP address', title: 'Invalid Input' });
     }
 };
@@ -955,6 +1219,8 @@ $scope.closeIpInputDialog = function() {
 				$localStorage.jsonarray = $localStorage.jsonarray.filter(function(n){ return n != null });
 				if ($localStorage.jsonarray==null) $localStorage.jsonarray=[];
 				delete $localStorage.jsonlabelsarray[id];
+                delete $localStorage.userVariables;
+                
 				$localStorage.jsonlabelsarray = $localStorage.jsonlabelsarray.filter(function(n){ return n != null });
 				if ($localStorage.jsonlabelsarray==null) $localStorage.jsonlabelsarray=[];
 				if ($localStorage.controllers.length==0)
@@ -998,50 +1264,8 @@ app.controller('PopoverController', function($rootScope, $scope, $http, $localSt
 	}
 });
 
-app.controller('Relay', function($rootScope, $scope, $timeout, $localStorage) {
-	$scope.$storage = $localStorage;
-	relayscope=$scope;
-	statusindex=0;
-	$scope.$on('msg', function(event, msg) {
-		//console.log('Relay'+msg);
-		if (msg=="update")
-		{
-			json.RA.lastrefresh=new Date().toLocaleString();
-			UpdateParams($scope,$timeout,$localStorage);
-		}
-		if (msg=="paramsok")
-		{
-			UpdateParams($scope,$timeout,$localStorage);
-		}
-	});
-$scope.invokegraph = function(n) {
-    var relayId = 'r' + n;
-    
-   // console.log("invokegraph called with id:", relayId);
-    names = [];
-    names.push(relayId);
-
-    tabbar.loadPage("singlegraph.html");
-    
-    // Use $timeout to delay the execution of CreateChart
-    $timeout(function() {
-        createRelayChart($scope, "paramscontainer", relayId);
-    }, 500); // Adjust the delay time as needed
-};
-
-	$scope.loadmaintab=function(){
-	//	console.log("main relay box");
-	}
-
-	$scope.loadexp1tab=function(){
-		$localStorage.exp1tab=true;
-//		console.log("exp1 relay box");
-	}
-
-	UpdateParams($scope,$timeout,$localStorage);
-});
-
 app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStorage){
+
 	$scope.$storage = $localStorage;
 	$scope.showgraphlist=true;
 	UpdateParams($scope,$timeout,$localStorage);
@@ -1077,6 +1301,8 @@ app.controller('Graph', function($rootScope, $scope, $http, $timeout, $localStor
 		if ($scope.graphpar==true) names.push("PAR");
 		if ($scope.graphhum==true) names.push("HUM");
         if ($scope.graphozo==true) names.push("OZO");
+        if ($scope.graphco2==true) names.push("CO2");
+        if ($scope.graphco2hum==true) names.push("CO2HUM");
 		if ($scope.graphcustom==true)
 		{
 			var items = $scope.graphcustomitems.split(",");
@@ -1325,62 +1551,51 @@ app.controller('InternalMemory', function($rootScope, $scope, $http, $timeout, $
 		}
 	};
 
-	$scope.updatecontrollermemory=function(cmd){
-		//console.log(cmd);
-		if (mqtt!=null )
-		{
-			SaveMQTTMemory(cmd);
-		}
-		else
-		{
-			var tempurl="http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
-			var request=$http({
-				method:"GET",
-				url: tempurl,
-				timeout: 3000
-			});
-			request.success(function(data){
-				attempts=0;
-				//console.log(data);
-				if (data.indexOf("OK")>0)
-					$scope.memoryresult+=": OK\n";
-				else
-					$scope.memoryresult+=": Error\n";
-				if (memindex<(MemString.length-1))
-				{
-					memindex++;
-					$scope.memoryresult+=MemString[memindex];
-					$timeout(function() {
-						$scope.updatecontrollermemory(MemURL[memindex]);
-					}, 1000);
-				}
-				else
-				{
-					modal.hide();
-				}
-
-			});
-			request.error(function(){
-				modal.hide();
-				if (attempts < 1)
-				{
-					attempts++;
-					$scope.updatecontrollermemory(cmd);
-				}
-				else
-				{
-					attempts=0;
-					ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
-				}
-			});
-		}
-	}
+$scope.updatecontrollermemory = function(cmd) {
+    //console.log(cmd);
+    if (mqtt != null) {
+        SaveMQTTMemory(cmd);
+    } else {
+        var tempurl = "http://" + $localStorage.controllers[$localStorage.activecontrollerid].ipaddress + ":" + $localStorage.controllers[$localStorage.activecontrollerid].port + "/" + cmd;
+        
+        $http.get(tempurl, {timeout: 3000})
+            .then(function(response) {
+                var data = response.data;
+                attempts = 0;
+                //console.log(data);
+                if (data.indexOf("OK") > 0) {
+                    $scope.memoryresult += ": OK\n";
+                } else {
+                    $scope.memoryresult += ": Error\n";
+                }
+                if (memindex < (MemString.length - 1)) {
+                    memindex++;
+                    $scope.memoryresult += MemString[memindex];
+                    $timeout(function() {
+                        $scope.updatecontrollermemory(MemURL[memindex]);
+                    }, 1000);
+                } else {
+                    modal.hide();
+                }
+            })
+            .catch(function() {
+                modal.hide();
+                if (attempts < 1) {
+                    attempts++;
+                    $scope.updatecontrollermemory(cmd);
+                } else {
+                    attempts = 0;
+                    ons.notification.alert({message: 'Unable to process controller data!', title: 'Reef Angel Controller'});
+                }
+            });
+    }
+}
 });
 
 function UpdateParams($scope,$timeout,$localStorage)
 {
 	$scope.$storage = $localStorage;
-	// console.log("UpdateParams()");
+//	console.log("UpdateParams()");
    $scope.reefangelconnected = false;
 	if ($localStorage.controllers.length>0)
 	{
@@ -1494,6 +1709,9 @@ function UpdateParams($scope,$timeout,$localStorage)
 			$scope.par = json.RA.PAR;
         if ((json.RA.EM1 & 32)==32)
             $scope.ozo = json.RA.OZO;
+         if ((json.RA.EM1 & 64)==64)
+            $scope.co2 = json.RA.CO2;
+            $scope.co2hum=(json.RA.CO2HUM/10).toFixed(1);
 		CheckFlags($scope);
 		$scope.atohigh = json.RA.ATOHIGH;
 		$scope.atolow = json.RA.ATOLOW;
@@ -1507,6 +1725,10 @@ function UpdateParams($scope,$timeout,$localStorage)
 		$scope.c5 = json.RA.C5;
 		$scope.c6 = json.RA.C6;
 		$scope.c7 = json.RA.C7;
+        
+        $scope.convertToNumber = function() {
+        $scope.dimmingoverridechange = Number($scope.dimmingoverridechange);
+        }
 
 		$scope.dimmingoverridelabel=dimmingchannels[channeloverride];
 		if (channeloverride==0)
@@ -1655,6 +1877,7 @@ function CheckExpansion($scope)
 	$scope.leakenabled = ((json.RA.EM1 & 4) == 4);
 	$scope.parenabled = ((json.RA.EM1 & 8) == 8);
     $scope.ozoenabled = ((json.RA.EM1 & 32) == 32);
+    $scope.co2enabled= ((json.RA.EM1 & 64) ==64);
 }
 
 function CheckCvar($scope)
@@ -1664,6 +1887,8 @@ function CheckCvar($scope)
 
 function CheckDimmingOverride($scope)
 {
+   
+    
 	if (json.RA.PWMDO<=100)
 	{
 		$scope.pwmdclass = "dimmingoverridehighlight";
@@ -1947,6 +2172,8 @@ function loaddefaultlabels()
 	jsondefaultlabels.RA.ORPN = "ORP";
 	jsondefaultlabels.RA.PHEN = "pH Expansion";
     jsondefaultlabels.RA.OZON = "Ozone";
+    jsondefaultlabels.RA.CO2N = "CO2";
+    jsondefaultlabels.RA.CO2HUMN = "Humidity";
 	jsondefaultlabels.RA.WLN = "Water Level";
 	jsondefaultlabels.RA.WL1N = "Water Level 1";
 	jsondefaultlabels.RA.WL2N = "Water Level 2";
@@ -2047,6 +2274,8 @@ function loaddefaultvalues()
     json.RA.UV7="0";
     json.RA.UV8="0";
     json.RA.OZO="0";
+    json.RA.CO2="0";
+    json.RA.CO2HUM="0.0";
 }
 
 function loadlabels($scope) {
@@ -2116,6 +2345,8 @@ function loadlabels($scope) {
 	$scope.uv8n=ifNull(jsonlabels.RA.UV8N, jsondefaultlabels.RA.UV8N);
     
     $scope.ozon=ifNull(jsonlabels.RA.OZON, jsondefaultlabels.RA.OZON);
+    $scope.co2n=ifNull(jsonlabels.RA.CO2N, jsondefaultlabels.RA.CO2N);
+    $scope.co2humn=ifNull(jsonlabels.RA.CO2HUMN, jsondefaultlabels.RA.CO2HUMN);
 
     
 	for (a=1; a<=8; a++)
@@ -2164,6 +2395,8 @@ function changeactivecontroller($scope, $localStorage, $rootScope, id)
 	parametersscope.humenabled=false;
 	parametersscope.parenabled=false;
     parametersscope.ozoenabled=false;
+    parametersscope.co2enabled=false;
+
 	if (jsonlabels==null) loaddefaultlabels();
 	cloudusername=$localStorage.controllers[$localStorage.activecontrollerid].cloudusername;
 	cloudpassword=$localStorage.controllers[$localStorage.activecontrollerid].cloudpassword;
@@ -2325,7 +2558,67 @@ function CreateChart($scope, container) {
 				tname = $scope.ozon
 				ydec = 1
 				yunit = '°'
-			}        
+			}
+        	else if (name == "CO2") {
+				pcolor = '#0033FF'
+				tname = $scope.co2n
+				ydec = 1
+				yunit = '°'
+			}
+        	else if (name == "CO2HUM") {
+				pcolor = '#0033FF'
+				tname = $scope.co2humn
+				ydec = 1
+				yunit = '°'
+			}
+            else if (name == "UV1") {
+				pcolor = '#9900CC'
+				tname = $scope.uv1n
+				ydec = 1
+				yunit = '°'
+			}
+            else if (name == "UV2") {
+				pcolor = '#9900CC'
+				tname = $scope.uv2n
+				ydec = 1
+				yunit = '°'
+			}
+            else if (name == "UV3") {
+				pcolor = '#9900CC'
+				tname = $scope.uv3n
+				ydec = 1
+				yunit = '°'
+			}
+            else if (name == "UV4") {
+				pcolor = '#9900CC'
+				tname = $scope.uv4n
+				ydec = 1
+				yunit = '°'
+			}
+        else if (name == "UV5") {
+				pcolor = '#9900CC'
+				tname = $scope.uv5n
+				ydec = 1
+				yunit = '°'
+			}
+        else if (name == "UV6") {
+				pcolor = '#9900CC'
+				tname = $scope.uv6n
+				ydec = 1
+				yunit = '°'
+			}
+        else if (name == "UV7") {
+				pcolor = '#9900CC'
+				tname = $scope.uv7n
+				ydec = 1
+				yunit = '°'
+			}
+        else if (name == "UV8") {
+				pcolor = '#9900CC'
+				tname = $scope.uv8n
+				ydec = 1
+				yunit = '°'
+			}
 			else {
 				pcolor = '#FF0000'
 				tname = ''
@@ -2335,7 +2628,7 @@ function CreateChart($scope, container) {
 			if (data.length) {
 				seriesOptions[seriesID] = {
 					dataGrouping: {
-						smoothed: true
+						enabled: false
 					},
 					name: tname,
 					color: pcolor,
@@ -2365,9 +2658,24 @@ function CreateChart($scope, container) {
 }
 
 function DrawChart(container) {
-    chart = Highcharts.stockChart(container, { // Use container parameter directly
+    // Make sure to include the Highcharts exporting module correctly
+    chart = Highcharts.stockChart(container, {
         chart: {
             type: 'spline'
+        },
+        exporting: {
+            enabled: true, // Make sure exporting is enabled
+            buttons: {
+                contextButton: {
+                    symbol: 'menu', // Change the symbol if you wish
+                align: 'right', // Align to the right side of the chart
+                verticalAlign: 'top', // Align to the top of the chart
+                x: 0, // Horizontal offset, negative shifts it left
+                y: 95,// Vertical offset, positive shifts it down
+                    enabled: true, // Explicitly enable the context button if not showing
+                    menuItems: ['downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG', 'separator', 'printChart']
+                }
+            }
         },
         credits: {
             enabled: false
@@ -2377,12 +2685,12 @@ function DrawChart(container) {
             borderColor: 'black',
             borderWidth: 2,
             verticalAlign: 'top',
-            y:0 ,
+            y: 0,
             shadow: true
         },
         rangeSelector: {
-            y:100,
-            enabled: true, // Explicitly enable the range selector
+            y: 100,
+            enabled: true,
             buttons: [{
                 type: 'hour',
                 count: 1,
@@ -2404,14 +2712,10 @@ function DrawChart(container) {
                 count: 7,
                 text: '7d'
             }, {
-                // This button will show data for the last 30 days but is labeled as "All"
-                // to mimic an "All" functionality, you might need to adjust its behavior
-                // based on your dataset's total time span or handle it differently in your code
-                type: 'day',
-                count: 30,
+                type: 'all',
                 text: '30d'
             }],
-            selected: 3 // This selects the "30Days" button by default
+            selected: 3 // Default to "3 days"
         },
         navigator: {
             xAxis: {
@@ -2444,18 +2748,10 @@ function DrawChart(container) {
             xDateFormat: '%A, %b %e, %l:%M %p',
             pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>'
         },
-        plotOptions: {
-            series: {
-                dataGrouping: {
-                    approximation: 'open'
-                }
-            }
-        },
-        series: seriesOptions // Ensure this is correctly defined
+        series: seriesOptions // Make sure seriesOptions is correctly defined
     });
 
-	modal.hide();
-
+    modal.hide(); // Ensure modal is part of your UI logic and handled correctly
 }
 
 function getbytevalue(d,i)
@@ -2504,7 +2800,7 @@ function MQTTconnect() {
 	parametersscope.cloudstatus="Connecting...";
 	relayscope.cloudstatus="Connecting...";
 	if (json!=null && json.RA!=null)
-		json.RA.cloudstatus="Connecting...";
+    json.RA.cloudstatus="Connecting...";
 	// console.log("MQTTconnect(): cloudusername=" + cloudusername + ", cloudpassword=", + cloudpassword);
 	mqtt = new Paho.MQTT.Client(
 					"forum.reefangel.com",
@@ -2515,6 +2811,7 @@ function MQTTconnect() {
 		timeout: 3,
 		useSSL: true,
 		cleanSession: true,
+        keepAliveInterval: 45,
 		onSuccess:onConnect,
 		onFailure: function (message) {
             if (message.errorCode == 6){
@@ -2528,9 +2825,7 @@ function MQTTconnect() {
             {
                 ons.notification.alert({message: 'Connection failed: ' + message.errorMessaged, title: 'Reef Angel Controller'});
             }
-            
-			setConnectionLost();
-             
+			setConnectionLost();  
 		}
 	};
 
@@ -2554,9 +2849,8 @@ function onConnect() {
 	parametersscope.cloudstatus="Connected";
 	relayscope.cloudstatus="Connected";
 	if (json!=null && json.RA!=null)
-		json.RA.cloudstatus="Connected";
-	parametersscope.$apply();
-	relayscope.$apply();
+    json.RA.cloudstatus="Connected";
+
 	mqtt.subscribe(cloudusername + "/out");
 	message = new Paho.MQTT.Message("all:0");
 	message.destinationName = cloudusername + "/in";
@@ -2564,40 +2858,52 @@ function onConnect() {
 }
 
 function onConnectionLost(response) {
-    // Manually get the $injector service
-    var $injector = angular.element(document.body).injector();
+    console.log("Connection Lost: code=" + response.errorCode + ", message=" + response.errorMessage);
 
-    // Use $injector to get the $timeout service
-    var $timeout = $injector.get('$timeout');
-
-  //  console.log("Connection Lost: code=" + response.errorCode + ", message=" + response.errorMessage);
-
-    // Use $timeout within this function
-    $timeout(function() {
-        if(parametersscope) parametersscope.cloudstatus = "Disconnected";
-        if(relayscope) relayscope.cloudstatus = "Disconnected";
-        
-        if (json != null && json.RA != null) {
-            json.RA.cloudstatus = "Disconnected";
-        }
-    });
-
+    // Assuming these are available in this context and are part of AngularJS's scope
+    if (parametersscope) {
+        parametersscope.cloudstatus = "Disconnected";
+        safeApply(parametersscope);
+    }
+    if (relayscope) {
+        relayscope.cloudstatus = "Disconnected";
+        safeApply(relayscope);
+    }
+    if (json && json.RA) {
+        json.RA.cloudstatus = "Disconnected";
+        // If json.RA is part of AngularJS scope, you should also safely apply changes
+    }
+    
     mqtt = null;
-
-    if (response.errorCode == 7) {
+    if (response.errorCode == 7) { // Assuming this means a retryable error
         MQTTconnect();
     }
 }
-function setConnectionLost($timeout) {
-    $timeout(function() {
-        if(parametersscope) parametersscope.cloudstatus = "Disconnected";
-        if(relayscope) relayscope.cloudstatus = "Disconnected";
-        
-        if (json != null && json.RA != null) {
-            json.RA.cloudstatus = "Disconnected";
-        }
-    });
+
+function setConnectionLost() {
+    // Similar logic to onConnectionLost, minus the response handling
+    if (parametersscope) {
+        parametersscope.cloudstatus = "Disconnected";
+        safeApply(parametersscope);
+    }
+    if (relayscope) {
+        relayscope.cloudstatus = "Disconnected";
+        safeApply(relayscope);
+    }
+    if (json && json.RA) {
+        json.RA.cloudstatus = "Disconnected";
+        // Apply if necessary
+    }
     mqtt = null;
+}
+
+// Utility function to safely apply changes to scope
+function safeApply(scope, fn) {
+    if (scope && !scope.$$phase && scope.$apply) {
+        scope.$apply(fn);
+    } else if (fn && typeof fn === 'function') {
+        fn();
+    }
 }
 
 function setModeLabel() {
@@ -2664,8 +2970,12 @@ function checkAndNotifySFChanges(oldsf, newsf) {
         }
     }
 }
+
 function onMessageArrived(message) {
 	var payload = message.payloadString;
+     // Convert to number
+
+    //var payload = message.payloadString;
 	//console.log(message.payloadString);
 	json.RA.lastrefresh=new Date().toLocaleString();
 	json.RA.ID=cloudusername;
@@ -2689,8 +2999,9 @@ function onMessageArrived(message) {
 	var oldsf=json.RA.SF;
 	var oldaf=json.RA.AF;
 
-	if (payload.match(/T\d:.*/g) || payload.indexOf("SAL:") != -1)
-		UpdateCloudParam(message, 10, 1);
+if (payload.match(/T\d:.*/g) || payload.indexOf("SAL:") != -1 || payload.indexOf("CO2HUM:") != -1) {
+    UpdateCloudParam(message, 10, 1);
+}
 	else if (payload.match(/PHE?:.*/g))
 		UpdateCloudParam(message, 100, 2);
 	else
@@ -2704,9 +3015,6 @@ function onMessageArrived(message) {
 	{
 		CheckExpansion(parametersscope);
 	}
-
-
-
 
 // For AF changes
 if (payload.indexOf("AF:") != -1) {
@@ -2731,6 +3039,7 @@ if (payload.indexOf("SF:") != -1) {
 	{
 		CheckDimmingOverride(parametersscope);
 	}
+
 	if (payload.match(/RF[MSD]:.*/g))
 	{
 		parametersscope.rfm = rfmodes[parseInt(json.RA.RFM)];
@@ -2760,11 +3069,25 @@ if (payload.indexOf("SF:") != -1) {
 		memoryraw = memoryraw.split(" ").join("");
 		//console.log(memoryraw);
 	}
+if (payload.indexOf("CAL") !== -1) {
+    var parts = payload.split(":");
+    // Check if there are at least two parts (meaning at least one calibration value is present)
+    if (parts.length >= 2) {
+        var calValue1 = parts[1]; // This will be the calibration value in both cases
+        json.RA.calValue1 = calValue1; // Save the first calibration value
+
+        // If there are three parts, it means a second calibration value is also present
+        if (parts.length === 3) {
+            var calValue2 = parts[2];
+            json.RA.calValue2 = calValue2; // Save the second calibration value
+        }
+    }
+}
 	currentstorage.json=json;
 	currentstorage.jsonarray[currentstorage.activecontrollerid]=json;
-	parametersscope.$apply();
-	relayscope.$apply();
-};
+	safeApply(parametersscope);
+	safeApply(relayscope);
+}; 
 
 function UpdateCloudParam(message, division, decimal)
 {
@@ -2820,17 +3143,31 @@ Number.prototype.pad = function(size) {
 
 // Labels Tab
 app.controller('labels', function($rootScope, $scope, $timeout, $localStorage, $http) {
-	$scope.$storage = $localStorage;
+	CheckExpansion($scope);
+    
+    CheckCvar($scope)
+    $scope.$storage = $localStorage;
 	$scope.controllers=$localStorage.controllers;
 	labelsscope=$scope;
-    
-    
+    $scope.star= (json.RA.BID ==4);
+$scope.rem = (json.RA.REM);  // Assuming json.RA.REM is correctly defined earlier
+$scope.relayVisibility = {}; // Ensure this object is initialized
+
+// Function to update which relay boxes should be visible
+$scope.updateRelayVisibility = function() {
+    for (var i = 1; i <= 8; i++) {
+        $scope.relayVisibility['r' + i] = !!($scope.rem & (1 << (i - 1)));
+    }
+};
+
+    // Call the function on controller initialization
+    $scope.updateRelayVisibility();
     
 
     
      $scope.labels = {
                        // Paramter Labels
-                       t1n:'', t2n:'',t3n:'',t4n:'',t5n: '',t6n: '',phn: '',saln: '',orpn: '',wln: '',wl1n: '',wl2n: '',wl3n: '',wl4n: '',humn: '',parn: '',phenn: '', ozon: '',
+                       t1n:'', t2n:'',t3n:'',t4n:'',t5n: '',t6n: '',phn: '',saln: '',orpn: '',wln: '',wl1n: '',wl2n: '',wl3n: '',wl4n: '',humn: '',parn: '',phenn: '', ozon: '',co2n:'',co2humn:'',
                       // Relay Labels
                       r1n: '',r2n: '',r3n: '',r4n: '',r5n: '',r6n: '',r7n: '',r8n: '',r11n: '',r12n: '',r13n: '',r14n: '',r15n: '',r16n: '',r17n: '',r18n: '',r21n: '',r22n: '',r23n: '',r24n: '',r25n: '',r26n: '',r27n: '',r28n: '',r31n: '',r32n: '',r33n: '',r34n: '',r35n: '',r36n: '',r37n: '',r38n: '',r41n: '',r42n: '',r43n: '',r44n: '',r45n: '',r46n: '',r47n: '',r48n: '',r51n: '',r52: '',r53n: '',r54n: '',r55n: '',r56n: '',r57n: '',r58n: '',r61n: '',r62n: '',r63n: '',r64n: '',r65n: '',r66n: '',r67n: '',r68n: '',r71n: '',r72n: '',r73n: '',r74n: '',r75n: '',r76n: '',r77n: '',r78n: '',r81n: '',r82n: '',r83n: '',r84n: '',r85n: '',r86n: '',r87n: '',r8n: '',
                      // RF Labels
@@ -3050,8 +3387,10 @@ app.controller('emailalerts', function($rootScope, $scope, $localStorage, $http,
        //other expansion
     { value: "65", label: "pH Expansion" },
     { value: "67", label: "Humidity" }, 
-    { value: "102", label: "PAR Expansion" },
-    { value: "122", label: "Ozone Expansion"},
+    { value: "102", label: "PAR" },
+    { value: "122", label: "Ozone"},
+    { value: "123", label: "Co2 "},
+    { value: "124", label: "Co2-Humidity"},
            //IO Expansion
     { value: "1077", label: "IO Channel 0" },   
     { value: "1078", label: "IO Channel 1" },  
@@ -3234,59 +3573,144 @@ if (controllers && controllers.length > 0 && activeControllerId !== null) {
     var idToSend = selectedController.cloudusername || selectedController.username;
 };
     // Initialize your alert model
+$scope.alert = {
+    reefangelid: idToSend,
+    emailaddress: '',
+    name: '',
+    parameter: '',
+    condition: '',
+    interval:'',
+    value: '',
+    description: '',
+    notificationType: '' // Default to email notifications
+};
+
+$scope.editAlert = function(alert) {
     $scope.alert = {
-        reefangelid: idToSend,
-        emailaddress: '',
-        name: '',
-        parameter: '',
-        condition: '',
-        value: '',
-        description: ''
-    };
- 
-    // Function to add an alert
-    $scope.addAlert = function() {
-        modal.show();
-        //console.log('Adding alert', $scope.alert);
-        var userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        $scope.alert.timezone = userTimeZone;
-        $http.post('https://forum.reefangel.com/emailalerts/add', $scope.alert)
-            .then(function(response) {
-                // Handle success
-            modal.hide();
-                ons.notification.alert({message: 'Alert Saved Successfully', title: 'Reef Angel Controller' });
-               $scope.loadAlerts();
-            }, function(error) {
-    // Check for a 400 Bad Request response
-    if (error.status === 400) {
-        modal.hide();
-        // Handle 400-specific error
-        ons.notification.alert({message:'Error saving alert!',title: 'Reef Angel Controller' });
-    } else {
-        modal.hide();
-        // Handle other types of errors
-        ons.notification.alert({
-            message: 'Error Saving your alert',
-            title: 'Reef Angel Controller'
-        });
-    }
-});
+        reefangelid: idToSend,  // make sure `idToSend` is defined in your scope or passed correctly
+        name: alert.AlertName,
+        parameter: alert.ParameterID,
+        parameterlabel: alert.ParameterName,
+        condition: alert.ConditionID,
+        conditionlabel: alert.ConditionSymbol,
+        interval: alert.AlertInterval,
+        value: alert.Value,
+        description: alert.AlertDescription,
+        alertid: alert.AlertID
     };
 
+    // Using $timeout to ensure DOM is updated
+    $timeout(function() {
+        document.getElementById('top').scrollIntoView();
+    }, 0); // 0 ms delay to allow scope digestion
+};
+
     
-$scope.loadAlerts = function() {
+
+
+// Utility function for converting the URL-safe base64 string to a Uint8Array
+
+    // Function to add an alert
+$scope.addAlert = function() {
+    modal.show();
+    var userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    $scope.alert.timezone = userTimeZone;
+
+    // Create a new object to hold only non-null and non-empty values
+var requestData = {};
+for (var key in $scope.alert) {
+    if ($scope.alert.hasOwnProperty(key) && $scope.alert[key] !== null && $scope.alert[key] !== undefined && $scope.alert[key] !== '') {
+        requestData[key] = $scope.alert[key];
+    }
+}
+
+    if (requestData.alertid) {
+        // If the alert has an ID, it means we're editing an existing alert
+        $http.post('https://forum.reefangel.com/emailalerts/add', requestData)
+            .then(function(response) {
+    // Handle success
+    let successmessage = 'Alert Updated Successfully';
+    if (response.status === 200 && response.data && response.data.message) {
+        successmessage = response.data.message;
+    }
+    $scope.loadAlerts(function() {
+        modal.hide();
+        ons.notification.alert({
+            message: successmessage,
+            title: 'Reef Angel Controller'
+        });
+    });
+            }, function(error) {
+                modal.hide();
+                let errorMessage = 'Error updating your alert'; // Default error message
+                let errorTitle = 'Reef Angel Controller'; // Default error title
+
+                if (error.status === 400 && error.data && error.data.message) {
+                    // If there is a specific error message from the server, use it
+                    errorMessage = error.data.message;
+                } else if (error.status === 500) {
+                    // Specific message for server errors
+                    errorMessage = 'Server error while updating your alert';
+                }
+
+                // Display the error notification with the specific or default message
+                ons.notification.alert({
+                    message: errorMessage,
+                    title: 'Reef Angel Controller'
+                });
+            });
+    } else {
+        // If the alert doesn't have an ID, it means we're adding a new alert
+        $http.post('https://forum.reefangel.com/emailalerts/add', requestData)
+           .then(function(response) {
+    // Handle success
+    let successmessage = 'Alert Updated Successfully';
+    if (response.status === 200 && response.data && response.data.message) {
+        successmessage = response.data.message;
+    }
+    $scope.loadAlerts(function() {
+        modal.hide();
+        ons.notification.alert({
+            message: successmessage,
+            title: 'Reef Angel Controller'
+        });
+    });
+            }, function(error) {
+                modal.hide();
+                let errorMessage = 'Error Saving your alert'; // Default error message
+                let errorTitle = 'Reef Angel Controller'; // Default error title
+
+                if (error.status === 400 && error.data && error.data.message) {
+                    // If there is a specific error message from the server, use it
+                    errorMessage = error.data.message;
+                } else if (error.status === 500) {
+                    // Specific message for server errors
+                    errorMessage = 'Server error while saving your alert';
+                }
+
+                // Display the error notification with the specific or default message
+                ons.notification.alert({
+                    message: errorMessage,
+                    title: errorTitle
+                });
+            });
+    }
+};
+
+$scope.loadAlerts = function(callback) {
     modal.show();
     $http.get('https://forum.reefangel.com/emailalerts/' + idToSend).then(function(response) {
         $scope.emailAddress = response.data.EmailAddress;
         $scope.alerts = response.data.Alerts;
-        $scope.lastDataLogTime = response.data.LastDataLogTime ? new Date(response.data.LastDataLogTime) : null;
-        
-      // Set the toggle based on the ConnectionAlertEnabled value
-   // Set the toggle based on the ConnectionAlertEnabled value from the server
+         $scope.lastDataLogTime = response.data.LastDataLogTime ? new Date(response.data.LastDataLogTime) : null;
+         
+        // Set the toggle based on the ConnectionAlertEnabled value
+        // Set the toggle based on the ConnectionAlertEnabled value from the server
         $scope.noDataAlertEnabled = response.data.ConnectionAlertEnabled === 1;
         // Also set the original state
         $scope.originalAlertEnabled = $scope.noDataAlertEnabled;
         // Initialize variables to store the latest alert details
+        $scope.alert.notificationType = response.data.NotificationType || 'push';
         let latestAlert = null;
         let latestTime = new Date(0); // Set to the earliest date possible
 
@@ -3304,12 +3728,47 @@ $scope.loadAlerts = function() {
             $scope.latestAlertName = latestAlert.AlertName;
             $scope.latestAlertTime = latestTime;
         }
-         modal.hide();
+        modal.hide();
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
     }, function(error) {
-         modal.hide();
-     //   console.error('Error fetching alerts:', error);
+        modal.hide();
+        // console.error('Error fetching alerts:', error);
     });
 };
+    
+$scope.checkNotificationPermission = function() {
+    if ($scope.alert.notificationType === 'push') {
+        if (Notification.permission === 'denied') {
+            ons.notification.alert({
+                message: 'Notifications are blocked, please enable them in your settings!',
+                title: 'Reef Angel Controller'
+            });
+            return;
+        }
+
+        if (Notification.permission === 'default') {
+            // Ask for permission
+            Notification.requestPermission().then(function(permission) {
+                if (permission === 'granted') {
+                    console.log('Notification permission granted.');
+                    // Automatically subscribe them to push notifications
+                    initiatePushSubscription(); // This should handle the subscription logic
+                } else {
+                    ons.notification.alert({
+                message: 'Notifications are blocked, please enable them in your settings!',
+                title: 'Reef Angel Controller'
+            });
+                    // Optionally, revert the selection
+                    $scope.alert.notificationType = 'email';
+                    
+                }
+            });
+        }
+    }
+};
+
 
 
 $scope.loadAlerts();
@@ -3414,19 +3873,17 @@ $scope.noDataAlert = function(value) {
 });
 
 function createRelayChart($scope, container, relayId) {
-    $("#"+container).html("");
-	$("#"+container).css("height",($(window).height()-15)+"px");
-	$("#"+container).css("margin-top","-200px");
-	Highcharts.setOptions({
-		global: {
-			useUTC: false
-		}
-	});
-	seriesOptions = [],
-	seriesCounter = 0,
-	seriesID = 0;
-    
-    
+    const mainContainer = $("#" + container);
+    mainContainer.empty(); // Clear any existing content
+    mainContainer.css("height", ($(window).height() - 15) + "px");
+    mainContainer.css("margin-top", "-95px"); // Move container down by 50px
+
+    Highcharts.setOptions({
+        global: {
+            useUTC: false
+        }
+    });
+modal.show();
     var labelsData = localStorage.getItem('ngStorage-jsonlabels');
     var labelMap = {};
 
@@ -3452,77 +3909,75 @@ function createRelayChart($scope, container, relayId) {
         }
     }
 
-    // Debug: Log the generated labelMap to check its structure
-    
-var url = 'https://forum.reefangel.com/chartdata?reefangelid=' + json.RA.ID + '&parameter=' + relayId;
+    var url = `https://forum.reefangel.com/chartdata?reefangelid=${json.RA.ID}&parameter=${relayId}`;
 
-$.getJSON(url, function(data) {
-    var seriesData = Array.from({ length: 8 }, () => []);
+    $.getJSON(url, function(data) {
+        var seriesData = Array.from({ length: 8 }, () => []);
 
-    data.forEach(function(point) {
-        var timestamp = point[0]; // Timestamp
-        var bitmask = point[1]; // Bitmask as an integer
-        var binaryString = bitmask.toString(2).padStart(8, '0'); // Convert to binary and pad to 8 bits
+        data.forEach(function(point) {
+            var timestamp = point[0]; // Timestamp
+            var bitmask = point[1]; // Bitmask as an integer
+            var binaryString = bitmask.toString(2).padStart(8, '0'); // Convert to binary and pad to 8 bits
 
-        // Create a data point for each bit in the binary string
-        binaryString.split('').reverse().forEach(function(bit, index) {
-            var bitValue = parseInt(bit, 2);
-            seriesData[index].push([timestamp, bitValue]); // Push as [x, y] pair
+            // Create a data point for each bit in the binary string
+            binaryString.split('').reverse().forEach(function(bit, index) {
+                var bitValue = parseInt(bit, 2);
+                seriesData[index].push([timestamp, bitValue]); // Push as [x, y] pair
+            });
+        });
+
+        // Update relaySeriesData with the correct port labels from labelMap
+        var relaySeriesData = seriesData.map(function(data, index) {
+            return {
+                name: labelMap[relayId + (index + 1) + 'n'] || 'Port ' + (index + 1),
+                data: data,
+                marker: {
+                    enabled: false,
+                    radius: 4, // Adjust as needed
+                },
+                lineWidth: 3, // Adjust as needed
+            };
+        });
+
+        // Call drawIndividualChart for each series
+        relaySeriesData.forEach((series, index) => {
+            drawIndividualChart(mainContainer, series, relayId, index);
         });
     });
-
-    // Update relaySeriesData with the correct port labels from labelMap
-    var relaySeriesData = seriesData.map(function(data, index) {
-        return {
-            name: labelMap[relayId + (index + 1) + 'n'] || 'Port ' + (index + 1),
-            data: data,
-            marker: {
-                enabled: true,
-                radius: 4, // Adjust as needed
-            },
-            lineWidth: 2, // Adjust as needed
-        };
-    });
-
-    // Call the drawRelayChart function with the updated relaySeriesData
-    drawRelayChart(container, relaySeriesData, relayId);
-});
-
 }
 
-function drawRelayChart(container, relaySeriesData, relayId) {
-    chart = new Highcharts.StockChart({
+function drawIndividualChart(container, series, relayId, index) {
+    const chartId = `chart_${relayId}_${index}`;
+    const chartDiv = $('<div>').attr('id', chartId).css('height', '250px').appendTo(container);
+   const colors = [
+        '#7cb5ec', // Light blue
+        '#434348', // Gray
+        '#90ed7d', // Light green
+        '#f7a35c', // Orange
+        '#8085e9', // Lavender
+        '#f15c80', // Pink
+        '#e4d354', // Yellow
+        '#2b908f', // Teal
+        '#f45b5b', // Red
+        '#91e8e1'  // Light teal
+    ];
+     
+    Highcharts.stockChart(chartId, {
         chart: {
-            renderTo: container,
-            type: 'line'
+            type: 'area',
+            zoomType: 'x' // Enable zooming along the x-axis
         },
+    
         title: {
-            text: `Relay Status for ${relayId}`
+            text: `${series.name}`
         },
-        yAxis: {
-            title: {
-                text: 'Status'
-            },
-            min: 0,
-            max: 2,
-            tickInterval: 1,
-            labels: {
-                formatter: function() {
-                    return this.value === 1 ? 'On' : this.value === 0 ? 'Off' : '';
-                }
-            }
-        },
- legend: {
-            enabled: true,
-            borderColor: 'black',
-            borderWidth: 2,
-            verticalAlign: 'top',
-            y: 0,
-            shadow: true
-        },
+        colors: [colors[index % colors.length]], // Use modulo to cycle through colors if more ports than colors
         rangeSelector: {
-            y: 100,
-            enabled: true, // Explicitly enable the range selector
+            enabled: true,
+            inputEnabled: true,
+            inputDateFormat: '%Y-%m-%d %H:%M:%S', // Includes time in the input format
+            inputEditDateFormat: '%Y-%m-%d %H:%M:%S', // Editable date format includes time
+            verticalAlign: 'bottom',
             buttons: [{
                 type: 'hour',
                 count: 1,
@@ -3544,62 +3999,60 @@ function drawRelayChart(container, relaySeriesData, relayId) {
                 count: 7,
                 text: '7d'
             }, {
-                // This button will show data for the last 30 days but is labeled as "All"
-                // to mimic an "All" functionality, you might need to adjust its behavior
-                // based on your dataset's total time span or handle it differently in your code
-                type: 'day',
-                count: 30,
+                type: 'all',
                 text: '30d'
             }],
-            selected: 3, // This selects the "30Days" button by default
-            inputEnabled: true,
-            inputDateFormat: '%Y-%m-%d',
-            inputEditDateFormat: '%Y-%m-%d'
+             // Default to the "3 days" button
+
+            selected: 3
         },
-        navigator: {
-            xAxis: {
-                type: 'datetime',
-                maxZoom: 3600000,
-                dateTimeLabelFormats: {
-                    second: '%I:%M:%S %p',
-                    minute: '%I:%M %p',
-                    hour: '%b/%e',
-                    day: '%b/%e',
-                    week: '%b/%e'
+
+ xAxis: {
+        type: 'datetime',
+        dateTimeLabelFormats: { day: '%e %b %Y' }
+    },
+      yAxis: {
+            title: {text: 'Status'},
+            min: 0,
+            max: 1,
+            tickInterval: 1,
+          showLastLabel: true,
+            labels: {
+                formatter: function() {
+                    if (this.value === 1) {
+                        return 'On';
+                    } else if (this.value === 0) {
+                        return 'Off';
+                    }
+                    return '';
                 }
-            }
-        },
-        xAxis: {
-            type: 'datetime',
-            maxZoom: 3600000,
-            dateTimeLabelFormats: {
-                second: '%I:%M:%S %p',
-                minute: '%I:%M %p',
-                hour: '%b/%e',
-                day: '%b/%e',
-                week: '%b/%e'
-            }
+            },
+            opposite: false
         },
         tooltip: {
-            borderColor: 'silver',
-            xDateFormat: '%A, %b %e, %l:%M %p',
-            pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>'
+            xDateFormat: '%A, %b %e, %Y %H:%M:%S'
         },
-        plotOptions: {
-            series: {
-                dataGrouping: {
-                    approximation: 'open'
-                }
+        series: [{
+            name: series.name,
+            data: series.data,
+            step: 'left',
+            marker: {
+                enabled: false,
+                radius: 3
+            },
+            lineWidth: 3,
+            dataGrouping: {
+                enabled: false
             }
-        },
-        series: relaySeriesData
+        }]
     });
+    modal.hide();
 }
-
 
 app.controller('DashboardSettings', ['$scope', '$localStorage', function($scope, $localStorage) {
     $scope.currentTab = 'parameters';
-
+ CheckExpansion($scope);
+    $scope.star= (json.RA.BID ==4);
     // Function to change tab
     $scope.changeTab = function(tabName) {
         $scope.currentTab = tabName;
@@ -3615,7 +4068,6 @@ app.controller('DashboardSettings', ['$scope', '$localStorage', function($scope,
         $scope.dashboardVisibility[parameter] = !$scope.dashboardVisibility[parameter];
     };
 }]);
-
 
 app.controller('userVariables', ['$scope', '$http', '$localStorage', '$timeout', '$rootScope', function($scope, $http, $localStorage, $timeout, $rootScope) {
 
@@ -3876,8 +4328,10 @@ $scope.saveEvent = function() {
 //fetch teh events 
 $scope.fetchEvents = function() {
     if ($scope.username) {
+        modal.show();
         $http.get(`https://forum.reefangel.com/calendarEvents/${$scope.username}`)
             .then(function(response) {
+            
                 var eventsData = [];
                 response.data.forEach(function(event) {
                  //   console.log('Event ID:', event.eventID);
@@ -3945,8 +4399,10 @@ $scope.fetchEvents = function() {
                 });
                 $scope.fullCalendarConfig.events = eventsData;
                 $scope.$broadcast('eventsUpdated');
+            modal.hide();
             })
             .catch(function(error) {
+            modal.hide();
                 console.error('Error fetching events:', error);
             });
     }
@@ -3957,30 +4413,32 @@ $scope.fetchEvents = function() {
 
 $scope.fetchAndUpdateUserVariables = function() {
     if ($scope.username) {
+        modal.show();
         $http.get(`https://forum.reefangel.com/rauv/get/${$scope.username}`) // The username is globally accessible.
             .then(function(response) {
-                if (response.data.userVariables && response.data.userVariables.length > 0) {
-            var serverUserVariables = response.data.userVariables[0];
+                modal.hide();
+                if (response.data.userVariables) {
+                    var serverUserVariables = response.data.userVariables;
 
-            // Initialize local storage for user variables if it doesn't exist
-            if (!$localStorage.userVariables) {
-                $localStorage.userVariables = {};
-            }
+                    // Initialize local storage for user variables if it doesn't exist
+                    if (!$localStorage.userVariables) {
+                        $localStorage.userVariables = {};
+                    }
 
-            // Update local storage with server values, defaulting to existing values if server provides null
-            for (let i = 1; i <= 8; i++) {
-                let uvKey = `uv${i}`;
-                $localStorage.userVariables[uvKey] = serverUserVariables[uvKey] !== null ? serverUserVariables[uvKey] : ($localStorage.userVariables[uvKey] || '0');
-            }
+                    // Update local storage with server values, defaulting to existing values if server provides null
+                    for (let i = 1; i <= 8; i++) {
+                        let uvKey = `uv${i}`;
+                        $localStorage.userVariables[uvKey] = serverUserVariables[uvKey] !== undefined ? serverUserVariables[uvKey] : ($localStorage.userVariables[uvKey] || '0');
+                    }
 
-            // Update $scope.userVariables to reflect the changes
-            $scope.userVariables = $localStorage.userVariables;
-        } else {
-         //   console.log('No user variables found in the response.');
-        }
-    }, function(error) {
-      //  console.error('Failed to fetch user variables:', error);
-    });
+                    // Update $scope.userVariables to reflect the changes
+                    $scope.userVariables = $localStorage.userVariables;
+                } else {
+                    // console.log('No user variables found in the response.');
+                }
+            }, function(error) {
+                // console.error('Failed to fetch user variables:', error);
+            });
     }
 };
 
@@ -4153,4 +4611,724 @@ app.directive('fullCalendar', ['$timeout', function($timeout) {
     };
 }]);
 
+app.controller('CalibrateController', ['$scope','$http', '$localStorage', '$timeout', '$rootScope', function($scope, $http, $localStorage, $timeout, $rootScope) {
+    CheckExpansion($scope);
+  // Set showStandardList to true by default
+  $scope.showStandardList = true;
+  $scope.showCustomList = false;
+
+  $scope.toggleList = function(listType) {
+    if (listType === 'standard') {
+      $scope.showStandardList = !$scope.showStandardList;
+      $scope.showCustomList = false;
+    } else if (listType === 'custom') {
+      $scope.showCustomList = !$scope.showCustomList;
+      $scope.showStandardList = false;
+    }
+  };
+
+//enables cloud calibrations for custom expansions   
+if (json.RA.BID == 4)
+{
+$scope.customcal=true;
+
+}
+else
+{
+$scope.customcal=false;
+}
+
+$scope.instructions = {
+  ph1:'Please place the probe into pH7.0 calibration solution, wait a few moments, and then press Start Calibration.',
+  ph2:'Please place the probe into pH10.0 calibration solution, wait a few moments, and then press Start Calibration.',
+  sal1:'Please place the probe into the 35ppt calibration solution, wait a few moments, and then press Start Calibration.',
+  orp1:'Please connect the terminator and press Start Calibration',
+  orp2:'Please disconnect the terminator and connect the ORP Probe',
+  orp3:'Please place the probe in 470mV calibration solution wate a few moments and then press Start Calibration',
+  calculating:'Calculating Calibration Please Wait.....',
+  save:'Ready to Save Calibration Value:',
+  wl1: 'Please hold the PVC pipe out of the water and press Start Calibration',
+  wl2:'Please place the PVC pipe into the water until the water level reaches the adapter and then press Start Calibration.',
+  rinse:'Rinse the Probe with RO/DI Water and press Next.',
+  finish:'Calibration Complete!',
+  cus1:'Please Place the probe in the first solution wait a few moments, and then press Start Calibration',
+  cus2:'Please Place the probe in the second solution wait a few moments, and then press Start Calibration',
+};
+
+$scope.showCal1=false;
+$scope.showCal2=false;
+$scope.finish=false;
+    
+$scope.calibrationData = {
+  calParameter: '',
+  currentStep: 1, // Initialize step counter
+  stepInstruction: '', // Instruction for the current step
+  buttonLabel: '',
+  isButtonDisabled: false,
+  instructions:'',
+  calValue1:'',
+  calValue2:'',
+  addToCalendar:false,
+};
+    
+$scope.$watch(function() {
+    return $localStorage.json.RA;
+}, function(newVal) {
+    if (newVal) {
+        $scope.refreshCalibrationData();
+    }
+}, true);
+$scope.refreshCalibrationData = function() {
+    $scope.calValue1 = $localStorage.json.RA.calValue1;
+    $scope.calValue2 = $localStorage.json.RA.calValue2; 
+};
+    
+    
+$scope.startCalibration = function(cmd){
+    message=null;
+        var message = new Paho.MQTT.Message(cmd);
+        message.qos = 1;
+    	if (message!=null)
+		{
+			modal.show();
+             $timeout(function() {
+            modal.hide();
+             }, 1000);
+			message.destinationName = cloudusername + "/in";
+			mqtt.send(message);
+		}
+} 
+// Function to start calibration and show the first instruction
+$scope.calibrate = function(calibrationType) {
+if (json.RA.BID !== '4') {
+    ons.notification.alert({
+        message: 'Calibrations from the Uapp are currently only available for the Star controller.',
+        title: 'Reef Angel Alert',
+    });
+} else if (json != null && json.RA != null && json.RA.cloudstatus === "Connected") {
+    
+    $scope.showCal1 = false;
+    $scope.showCal2 = false;
+    $scope.finish = false;
+    $scope.addToCalendar = false;
+    
+    var cmd = calibrationType + ':1'; // Correctly construct the cmd string
+    $scope.calibrationData.currentStep = 1; // Always start at step 1
+    $scope.calibrationData.ButtonLabel = "Start Calibration";
+    $scope.startCalibration(cmd);
+    $scope.calibrationType = calibrationType;
+  // Set initial instruction based on the calibration type
+  if (calibrationType === 'calph') {
+    $scope.calibrationData.calParameter = 'pH';
+    $scope.calibrationData.instructions ='ph'
+    $scope.calibrationData.stepInstruction = $scope.instructions.ph1;
+  }
+    else if (calibrationType === 'calsal') {
+    $scope.calibrationData.instructions='sal';    
+    $scope.calibrationData.calParameter = 'Salinity';  
+    $scope.calibrationData.stepInstruction = $scope.instructions.sal1;
+  }  
+    else if (calibrationType === 'calorp') {
+     $scope.calibrationData.instructions='orp';
+     $scope.calibrationData.calParameter = 'Orp';  
+    $scope.calibrationData.stepInstruction = $scope.instructions.orp1;
+  }  
+    else if (calibrationType === 'calphe') {
+    $scope.calibrationData.calParameter = 'pH Expansion';
+    $scope.calibrationData.instructions ='ph'  
+    $scope.calibrationData.stepInstruction = $scope.instructions.ph1;
+  }
+    else if (calibrationType === 'calwl') {
+    $scope.calibrationData.calParameter = 'Water Level';
+    $scope.calibrationData.instructions ='wl'
+    $scope.calibrationData.stepInstruction = $scope.instructions.wl1;
+  }
+    else if (calibrationType === 'calwl1') {
+    $scope.calibrationData.calParameter = 'Water Level 1';
+    $scope.calibrationData.instructions ='wl'
+    $scope.calibrationData.stepInstruction = $scope.instructions.wl1;
+  }
+    else if (calibrationType === 'calwl2') {
+    $scope.calibrationData.calParameter = 'Water Level 2';
+    $scope.calibrationData.instructions ='wl'    
+    $scope.calibrationData.stepInstruction = $scope.instructions.wl1;
+  }
+    else if (calibrationType === 'calwl3') {
+    $scope.calibrationData.calParameter = 'Water Level 3';
+    $scope.calibrationData.instructions ='wl'    
+    $scope.calibrationData.stepInstruction = $scope.instructions.wl1;
+  }
+    else if (calibrationType === 'calwl4') {
+    $scope.calibrationData.calParameter = 'Water Level 4';
+    $scope.calibrationData.instructions ='wl'    
+    $scope.calibrationData.stepInstruction = $scope.instructions.wl1;
+  }
+    //Custom Expansions
+    else if (calibrationType === 'calcus1') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 1';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus2') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 2';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus3') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 3';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus4') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 4';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus5') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 5';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus6') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 6';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus7') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 7';
+    $scope.calibrationData.instructions ='cus'    
+     $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }
+    else if (calibrationType === 'calcus8') {
+    $scope.calibrationData.calParameter = 'Custom Expansion 8';
+    $scope.calibrationData.instructions ='cus'    
+    $scope.calibrationData.stepInstruction = $scope.instructions.cus1;
+  }else {
+        // Default case if no known calibration type is matched
+        ons.notification.alert({
+            message: 'Unsupported calibration type.',
+            title: 'Reef Angel Alert',
+        });
+        return; // Exit the function early
+    }
+
+    // Show the dialog with the first instruction
+    ons.createDialog('caldialog.html', { parentScope: $scope }).then(function(dialog) {
+        $scope.dialog = dialog;
+        dialog.show();
+    });
+} else {
+    // If any condition is not met, handle the else case
+    ons.notification.alert({
+        message: 'Communication with your controller failed.',
+        title: 'Reef Angel Alert',
+    });
+}
+};
+
+// Function to proceed to the next step or complete the calibration process
+$scope.proceedToNextStep = function() {  
+    $scope.addToCalendar=false;
+    $scope.showCal1 = false;
+    $scope.showCal2 = false;
+    $scope.finish=false;
+    $scope.addToCalendar=false;
+    var nextCmd = $scope.calibrationType + ':2';
+    $scope.startCalibration(nextCmd);
+    if ($scope.calibrationData.instructions === 'ph') {
+    $scope.calibrationData.currentStep++;
+    // Update instructions based on the current step
+    if ($scope.calibrationData.currentStep === 2) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);      
+      } else if ($scope.calibrationData.currentStep === 3) {
+      
+      $scope.calibrationData.stepInstruction = $scope.instructions.rinse;
+      
+      }else if ($scope.calibrationData.currentStep === 4) {
+      // Assuming step 3 is the last step for pH calibration
+      $scope.calibrationData.stepInstruction = $scope.instructions.ph2;
+        $scope.calibrationData.ButtonLabel = "Start Calibration";
+      }
+      else if ($scope.calibrationData.currentStep === 5) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);  
+      }
+      else if ($scope.calibrationData.currentStep === 6) {
+      $scope.refreshCalibrationData(); 
+      $scope.showCal1=true;
+      $scope.showCal2=true;      
+      $scope.calibrationData.stepInstruction = $scope.instructions.save;
+      $scope.calibrationData.ButtonLabel = "Save";
+  
+      }
+      else if ($scope.calibrationData.currentStep === 7) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.finish;
+      $scope.finish=true;      
+      $scope.calibrationData.ButtonLabel = "Finish";
+      }
+      else if ($scope.calibrationData.currentStep === 8) {
+           $scope.dialog.hide();
+      }
+ }
+    if ($scope.calibrationData.instructions === 'sal') {
+    $scope.calibrationData.currentStep++;
+    // Update instructions based on the current step
+     if ($scope.calibrationData.currentStep === 2) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);     
+    } else if ($scope.calibrationData.currentStep === 3) {
+      $scope.showCal1=true;
+      $scope.calibrationData.stepInstruction = $scope.instructions.save;
+        $scope.calibrationData.ButtonLabel = "Save";
+    }else if ($scope.calibrationData.currentStep === 4) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.finish;
+        $scope.calibrationData.ButtonLabel = "Finish";
+        $scope.finish=true; 
+    }else if ($scope.calibrationData.currentStep === 5) {
+           $scope.dialog.hide();
+    }
+
+  }  
+    if ($scope.calibrationData.instructions === 'wl') {
+    $scope.calibrationData.currentStep++;
+    // Update instructions based on the current step
+    if ($scope.calibrationData.currentStep === 2) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);      
+      }else if ($scope.calibrationData.currentStep === 3) {
+      // Assuming step 3 is the last step for pH calibration
+      $scope.calibrationData.stepInstruction = $scope.instructions.wl2;
+        $scope.calibrationData.ButtonLabel = "Start Calibration";
+      }
+      else if ($scope.calibrationData.currentStep === 4) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);  
+      }
+      else if ($scope.calibrationData.currentStep === 5) {
+      $scope.refreshCalibrationData();      
+      $scope.showCal1=true;
+      $scope.showCal2=true;        
+      $scope.calibrationData.stepInstruction = $scope.instructions.save;
+      $scope.calibrationData.ButtonLabel = "Save";     
+      }
+      else if ($scope.calibrationData.currentStep === 6) {
+      $scope.calibrationData.stepInstruction = 'Calibration Complete!';
+      $scope.calibrationData.ButtonLabel = "Finish";
+      $scope.finish=true; 
+      }
+      else if ($scope.calibrationData.currentStep === 7) {
+           $scope.dialog.hide();
+      }
+    }
+    if ($scope.calibrationData.instructions === 'orp') {
+    $scope.calibrationData.currentStep++;
+    // Update instructions based on the current step
+    if ($scope.calibrationData.currentStep === 2) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);      
+      } else if ($scope.calibrationData.currentStep === 3) {
+      
+      $scope.calibrationData.stepInstruction = $scope.instructions.orp2;
+      
+      }else if ($scope.calibrationData.currentStep === 4) {
+      // Assuming step 3 is the last step for pH calibration
+      $scope.calibrationData.stepInstruction = $scope.instructions.orp3;
+        $scope.calibrationData.ButtonLabel = "Start Calibration";
+      }
+      else if ($scope.calibrationData.currentStep === 5) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);  
+      }
+      else if ($scope.calibrationData.currentStep === 6) {
+      $scope.refreshCalibrationData();    
+      $scope.showCal1=true;
+      $scope.showCal2=true;  
+      $scope.calibrationData.stepInstruction = $scope.instructions.save;
+      $scope.calibrationData.ButtonLabel = "Save";
+      }
+      else if ($scope.calibrationData.currentStep === 7) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.finish;
+      $scope.calibrationData.ButtonLabel = "Finish";
+      $scope.finish=true;       
+      }
+      else if ($scope.calibrationData.currentStep === 8) {
+           $scope.dialog.hide();
+      }
+ }
+    //custom expansion insstructions
+    if ($scope.calibrationData.instructions === 'cus') {
+    $scope.calibrationData.currentStep++;
+    // Update instructions based on the current step
+    if ($scope.calibrationData.currentStep === 2) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);      
+      } else if ($scope.calibrationData.currentStep === 3) {
+      
+      $scope.calibrationData.stepInstruction = $scope.instructions.rinse;
+      
+      }else if ($scope.calibrationData.currentStep === 4) {
+      // Assuming step 3 is the last step for pH calibration
+      $scope.calibrationData.stepInstruction = $scope.instructions.cus2;
+        $scope.calibrationData.ButtonLabel = "Start Calibration";
+      }
+      else if ($scope.calibrationData.currentStep === 5) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.calculating;
+      $scope.calibrationData.ButtonLabel = "Next";
+      $scope.calibrationData.isButtonDisabled = true; // Disable the button
+      $timeout(function() { $scope.calibrationData.isButtonDisabled = false;}, 7000);  
+      }
+      else if ($scope.calibrationData.currentStep === 6) {
+      $scope.refreshCalibrationData();
+      $scope.showCal1=true;
+      $scope.showCal2=true;            
+      $scope.calibrationData.stepInstruction = $scope.instructions.save;
+      $scope.calibrationData.ButtonLabel = "Save";
+      }
+      else if ($scope.calibrationData.currentStep === 7) {
+      $scope.calibrationData.stepInstruction = $scope.instructions.finish;
+      $scope.calibrationData.ButtonLabel = "Finish";
+      $scope.finish=true;       
+      }
+      else if ($scope.calibrationData.currentStep === 8) {
+           $scope.dialog.hide();
+      }
+ }
+    
+    var calName = $scope.calibrationData.calParameter + ' Calibrated'; // Event title
+    var today = new Date();
+    var eventDateTimeISO = today.toISOString().slice(0, 19).replace('T', ' '); // Format: yyyy-MM-dd HH:mm:ss
+    var eventDescription; // Declare the variable outside the if-else structure
+
+    if ($scope.calibrationData.calParameter === "Salinity") 
+    {
+    eventDescription = $scope.calibrationData.calParameter + ' calibration Value 1: ' + $scope.calValue1;
+    } 
+    
+    else 
+        
+    {
+    var eventDescription = $scope.calibrationData.calParameter + ' calibration Value 1: ' +$scope.calValue1 + ' Value 2: ' + $scope.calValue2;
+    }
+    var calInfo = {
+                eventName: calName,
+                eventDateTime: eventDateTimeISO,
+                eventDescription: eventDescription,
+                emailReminder: 0, // Assuming email reminder is always disabled
+                recurring: 0 // Set recurring value to 0
+            };
+    if ($scope.calibrationData.addToCalendar) {
+                // Send the POST request with the event data to add the event to the calendar
+                return $http.post(`https://forum.reefangel.com/calendarEvents/${cloudusername}`, calInfo)
+                            .then(function(response) {
+                              //  ons.notification.alert({message: 'Event saved successfully!', title: 'Reef Angel Controller'});
+                            });
+            }    
+}
+$scope.cancel = function() {
+    var cancelCmd = $scope.calibrationType + ':0'; // Use the stored calibration type
+    $scope.startCalibration(cancelCmd);
+    $scope.dialog.hide();
+};
+
+ 
+
+
+}]);
+app.controller('Logs', ['$rootScope', '$scope', '$http', '$timeout', '$localStorage', function($rootScope, $scope, $http, $timeout, $localStorage) {
+loadlabels($scope);
+    
+$scope.ioexpansion = ((json.RA.EM & 32) == 32);
+$scope.star= (json.RA.BID ==4);
+$scope.rexpansionEnabled = (json.RA.REM > 0);
+$scope.exp = {}; // Object to keep track of expansion boxes
+    // Use an object to hold last values for each parameter type
+   if ($scope.rexpansionEnabled) {
+        // Set properties for each expansion based on the REM bitmask
+        for (let i = 1; i <= 8; i++) {
+            $scope.exp[i] = !!(json.RA.REM & (1 << (i - 1)));
+        }
+    }
+    $scope.currentTab = 'flags';  // Set 'Alert Flags' as the default tab
+    $scope.logs = {
+        flags: [],
+        io: [],
+        relay: [],
+        other:[],
+    };
+    $scope.lastValue = {}; // To store the last log value for comparison
+    
+$scope.getName = function(parameter) {
+    switch (parameter) {
+        case 'atohigh': return $scope.atohighn;
+        case 'atolow': return $scope.atolown;
+        case 'alarm': return $scope.alarmn;
+        default: return parameter; // Fallback to raw parameter name
+    }
+};
+    // Define flags and their bitwise masks
+$scope.flags = [
+    { name: 'ATO Flag', mask: 1 },
+    { name: 'Overheat Flag', mask: 2 },
+    { name: 'Bus Lock Flag', mask: 4 },
+    { name: 'Water Leak Flag', mask: 8 }
+];
+const ioChannels = [
+    { bitValue: 1, labelKey: 'IO0N', defaultLabel: 'IO Channel 0' },
+    { bitValue: 2, labelKey: 'IO1N', defaultLabel: 'IO Channel 1' },
+    { bitValue: 4, labelKey: 'IO2N', defaultLabel: 'IO Channel 2' },
+    { bitValue: 8, labelKey: 'IO3N', defaultLabel: 'IO Channel 3' },
+    { bitValue: 16, labelKey: 'IO4N', defaultLabel: 'IO Channel 4' },
+    { bitValue: 32, labelKey: 'IO5N', defaultLabel: 'IO Channel 5' },
+    { bitValue: 64, labelKey: 'IO6N', defaultLabel: 'IO Channel 6' },
+    { bitValue: 128, labelKey: 'IO7N', defaultLabel: 'IO Channel 7' }
+];
+$scope.io = [];
+ioChannels.forEach(channel => {
+    let label = jsonlabels.RA[channel.labelKey] || channel.defaultLabel;
+    $scope.io.push({ name: label, mask: channel.bitValue });
+});
+    $scope.relayPorts = [];
+
+// Define the number of main relay ports
+const mainRelayPortsCount = 8;
+
+// Define the number of expansion relay boxes
+const expansionBoxesCount = 8;
+
+// Loop through main relay ports
+for (let i = 1; i <= mainRelayPortsCount; i++) {
+    $scope.relayPorts.push({ name: 'RelayP' + i, mask: 1 << (i - 1) });
+}
+
+// Loop through expansion relay boxes and their ports
+for (let box = 1; box <= expansionBoxesCount; box++) {
+    for (let port = 1; port <= mainRelayPortsCount; port++) {
+        $scope.relayPorts.push({ name: 'RelayE' + box + 'P' + port, mask: 1 << (port - 1) });
+    }
+}
+    
+    
+$scope.labelMap = {}; // This will hold the label mapping.
+
+    $scope.loadPortLabels = function(relayId) {
+        var labelsData = localStorage.getItem('ngStorage-jsonlabels');
+        if (labelsData) {
+            var storageData = JSON.parse(labelsData);
+            var customLabels = storageData.RA || {}; // Safe access
+
+            // Loop and assign labels
+            for (var portNumber = 1; portNumber <= 8; portNumber++) {
+                var key = (relayId + portNumber + 'N').toUpperCase();
+                $scope.labelMap[relayId + portNumber + 'n'] = customLabels[key] || 'Port ' + portNumber;
+            }
+        } else {
+            // Default labels if no custom labels are found
+            for (var portNumber = 1; portNumber <= 8; portNumber++) {
+                $scope.labelMap[relayId + portNumber + 'n'] = 'Port ' + portNumber;
+            }
+        }
+    };
+    // Fetch logs based on the parameter
+$scope.processNormalLogs = function(logData, parameter) {
+    var logs = [];
+    if (!$scope.lastValue) $scope.lastValue = {};
+    logData.forEach((entry) => {
+        let [timestamp, value] = entry;
+        // Only log if the value has changed since last logged
+        if ($scope.lastValue[parameter] !== value) {
+            let paramName = $scope.getName(parameter); // Fetch the readable name
+            let changeDescription = paramName + ' changed to ' + value;
+            logs.unshift({
+                timestamp: new Date(timestamp),
+                changeDescription: changeDescription,
+                rawTimestamp: timestamp
+            });
+            $scope.lastValue[parameter] = value; // Update last value
+        }
+    });
+    return logs;
+};
+
+
+$scope.processBitwiseLogs = function(logData, parameter) {
+    var logs = [];
+    logData.forEach((entry) => {
+        let [timestamp, value] = entry;
+        if ($scope.lastValue[parameter] === undefined) {
+            $scope.lastValue[parameter] = value;
+            return; // Skip logging the first value since no previous comparison
+        }
+
+        let changes = $scope.getChanges($scope.lastValue[parameter], value, parameter);
+        if (changes.length > 0) {
+            changes.forEach(change => {
+                logs.unshift({
+                    timestamp: new Date(timestamp),
+                    rawTimestamp: timestamp,
+                    changeDescription: change
+                });
+            });
+        }
+        $scope.lastValue[parameter] = value; // Always update the last value
+    });
+    return logs;
+};
+$scope.fetchLogs = function(parameter) {
+    if(json.RA.ID!=null){
+    modal.show();
+    $http.get('https://forum.reefangel.com/chartdata?reefangelid=' + json.RA.ID + '&parameter=' + parameter)
+    .then(function(response) {
+        if (parameter === 'af') {
+            $scope.logs.flags = $scope.processBitwiseLogs(response.data, parameter);
+        } else if (['atohigh', 'atolow', 'alarm'].includes(parameter)) {
+            $scope.logs.other = $scope.processNormalLogs(response.data, parameter);
+        } else if (parameter === 'io') {
+            $scope.logs.io = $scope.processBitwiseLogs(response.data, parameter);
+        } else if (['r', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8'].includes(parameter)) {
+            $scope.logs.relay = $scope.processRelayLogs(response.data, parameter); // Update this line
+        }
+        modal.hide();
+    }, function(error) {
+        console.error('Failed to fetch logs for parameter ' + parameter + ':', error);
+        modal.hide();
+    });
+        }
+    else
+    {
+        ons.notification.alert({message: 'You must login to view logs!', title: 'Reef Angel Controller'});
+    }
+};
+
+
+$scope.processRelayLogs = function(logData, parameter) {
+    var logs = [];
+    logData.forEach((entry) => {
+        let [timestamp, value] = entry;
+        if (parameter === 'r') {
+            $scope.relayPorts.forEach((port) => {
+                if (logs.length >= 2000) {  // If the log exceeds 200 entries, remove the oldest
+                    logs.shift();
+                }
+                if (port.name.startsWith('RelayP')) {
+                    let portIndex = parseInt(port.name.replace('RelayP', ''));
+                    let portLabelKey = 'R' + portIndex + 'N';
+                    let portLabel = jsonlabels.RA[portLabelKey] || 'Port ' + portIndex;
+                    let portValue = value & port.mask;
+                    let lastPortValue = $scope.lastValue[port.name];
+                    if (portValue !== lastPortValue) {
+                        logs.push({
+                            timestamp: new Date(timestamp),
+                            changeDescription: portLabel + (portValue ? ' turned on' : ' turned off'),
+                            rawTimestamp: timestamp
+                        });
+                        $scope.lastValue[port.name] = portValue;
+                    }
+                }
+            });
+        } else {
+            let selectedBox = parseInt(parameter.substring(1));
+            $scope.relayPorts.forEach((port) => {
+                if (logs.length >= 2000) {  // If the log exceeds 200 entries, remove the oldest
+                    logs.shift();
+                }
+                if (port.name.startsWith('RelayE' + selectedBox)) {
+                    let portNumber = parseInt(port.name.replace('RelayE' + selectedBox + 'P', ''));
+                    let portLabelKey = 'R' + selectedBox + portNumber + 'N';
+                    let portLabel = jsonlabels.RA[portLabelKey] || 'Port ' + portNumber;
+                    let portValue = value & port.mask;
+                    let lastPortValue = $scope.lastValue[port.name];
+                    if (portValue !== lastPortValue) {
+                        logs.push({
+                            timestamp: new Date(timestamp),
+                            changeDescription: portLabel + (portValue ? ' turned on' : ' turned off'),
+                            rawTimestamp: timestamp
+                        });
+                        $scope.lastValue[port.name] = portValue;
+                    }
+                }
+            });
+        }
+    });
+    return logs;
+};
+$scope.selectedPort = ''; // Set selectedPort to an empty string initially
+
+$scope.setPort = function(portLabel) {
+    if (portLabel === '') {
+        $scope.selectedPort = ''; // If "All Ports" is selected, set selectedPort to an empty string
+    } else {
+        $scope.selectedPort = portLabel;
+    }
+    $scope.filterLogsByPort();
+};
+
+// Function to filter logs based on the selected port
+$scope.filterLogsByPort = function() {
+    if ($scope.selectedPort && $scope.selectedPort !== '') {
+        $scope.filteredLogs = $scope.logs.relay.filter(log => 
+            log.changeDescription.includes($scope.selectedPort)
+        );
+    } else {
+        $scope.filteredLogs = $scope.logs.relay; // Show all logs if no specific port is selected
+    }
+};
+    // Determine what changed based on bitwise flags
+$scope.getChanges = function(oldValue, newValue, parameter) {
+    let changes = [];
+    let itemList = parameter === 'af' ? $scope.flags : $scope.io;
+
+   // console.log(`Calculating changes for ${parameter}: old value = ${oldValue}, new value = ${newValue}`);
+
+    itemList.forEach(item => {
+        let bitMask = item.mask;
+        let wasSet = (oldValue !== undefined) && ((oldValue & bitMask) === bitMask);
+        let isSet = (newValue & bitMask) === bitMask;
+
+        if (wasSet !== isSet) {
+            let description = item.name;
+            if (parameter === 'af') {
+                description += isSet ? ' activated' : ' deactivated';
+            } else {
+                description += isSet ? ' changed to 1' : ' changed to 0';
+            }
+            changes.push(description);
+
+         //   console.log(`Detected change: ${description}`);
+        }
+    });
+
+    return changes;
+};
+
+
+   
+    // Change tab and fetch appropriate logs
+    $scope.changeTab = function(tabName) {
+        $scope.currentTab = tabName;
+        if (tabName == 'af'){
+            $scope.fetchLogs('af');
+        }
+         // fetch 'af' for 'flags', otherwise use tab name
+    };
+
+    // Fetch default tab logs when controller loads
+    $scope.fetchLogs('af');
+}]);
 
